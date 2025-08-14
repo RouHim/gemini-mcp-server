@@ -1,0 +1,2 @@
+[console_scripts]
+gemini-mcp-server = gemini_mcp_server.server:main

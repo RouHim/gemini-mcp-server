@@ -81,12 +81,31 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --strict-markers --strict-config"
 asyncio_mode = "auto"
+minversion = "7.0"
+markers = [
+    "unit: marks tests as unit tests (fast)",
+    "integration: marks tests as integration tests (slower)",
+    "smoke: marks tests as smoke tests (critical functionality)",
+    "slow: marks tests as slow running",
+]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning:pydantic.*",
+]
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "src/gemini_mcp_server/__pycache__/*",
+    "*/migrations/*",
+    "*/__init__.py",
+]
+branch = true
+parallel = true
 
 [tool.coverage.report]
 exclude_lines = [
@@ -100,4 +119,15 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "class .*\\bProtocol\\):",
     "@(abc\\.)?abstractmethod",
+    "except ImportError:",
+    "except ModuleNotFoundError:",
 ]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

@@ -1,1 +1,98 @@
-name: CI\n\non:\n  push:\n    branches: [ main ]\n  pull_request:\n    branches: [ main ]\n\njobs:\n  test:\n    runs-on: ubuntu-latest\n    strategy:\n      matrix:\n        python-version: [\"3.10\", \"3.11\", \"3.12\"]\n\n    steps:\n    - uses: actions/checkout@v4\n    \n    - name: Set up Python ${{ matrix.python-version }}\n      uses: actions/setup-python@v4\n      with:\n        python-version: ${{ matrix.python-version }}\n    \n    - name: Install dependencies\n      run: |\n        python -m pip install --upgrade pip\n        pip install -e .\n        pip install -r requirements-dev.txt\n    \n    - name: Lint with ruff\n      run: ruff check .\n    \n    - name: Format check with black\n      run: black --check .\n    \n    - name: Type check with mypy\n      run: mypy src/\n    \n    - name: Test with pytest\n      run: pytest tests/ -v --cov=gemini_mcp_server --cov-report=xml\n    \n    - name: Upload coverage to Codecov\n      uses: codecov/codecov-action@v3\n      with:\n        file: ./coverage.xml\n        fail_ci_if_error: true\n
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+    
+    - name: Lint with ruff
+      run: ruff check src/ tests/
+    
+    - name: Format check with black
+      run: black --check src/ tests/
+    
+    - name: Type check with mypy
+      run: mypy src/
+    
+    - name: Test with pytest
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-mocking' }}
+      run: |
+        pytest tests/ -v \
+          --cov=src \
+          --cov-report=xml \
+          --cov-report=term \
+          --cov-report=html \
+          --cov-fail-under=80 \
+          -m "not integration or integration"
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
+        verbose: true
+        
+    - name: Upload coverage to artifacts
+      uses: actions/upload-artifact@v3
+      if: matrix.python-version == '3.11'
+      with:
+        name: coverage-report
+        path: htmlcov/
+
+  integration-test:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.11"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+    
+    - name: Run integration tests
+      env:
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      run: |
+        if [ -n "$GEMINI_API_KEY" ]; then
+          pytest tests/test_integration.py -v -m integration
+        else
+          echo "Skipping integration tests - no API key provided"
+        fi

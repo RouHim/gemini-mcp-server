@@ -1,1 +1,42 @@
-{\n  \"branches\": [\"main\"],\n  \"plugins\": [\n    \"@semantic-release/commit-analyzer\",\n    \"@semantic-release/release-notes-generator\",\n    \"@semantic-release/changelog\",\n    [\n      \"@semantic-release/exec\",\n      {\n        \"prepareCmd\": \"python -m build\"\n      }\n    ],\n    [\n      \"@semantic-release/github\",\n      {\n        \"assets\": [\n          {\n            \"path\": \"dist/*.tar.gz\",\n            \"label\": \"Source distribution\"\n          },\n          {\n            \"path\": \"dist/*.whl\",\n            \"label\": \"Python wheel\"\n          }\n        ]\n      }\n    ],\n    [\n      \"@semantic-release/git\",\n      {\n        \"assets\": [\"CHANGELOG.md\", \"pyproject.toml\"],\n        \"message\": \"chore(release): ${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}\"\n      }\n    ]\n  ]\n}\n
+{
+  "branches": ["main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md"
+      }
+    ],
+    [
+      "@semantic-release/exec",
+      {
+        "prepareCmd": "python -m build",
+        "publishCmd": "python -m twine upload dist/* --username __token__ --password ${PYPI_TOKEN} --non-interactive --skip-existing"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/*.tar.gz",
+            "label": "Source distribution"
+          },
+          {
+            "path": "dist/*.whl",
+            "label": "Python wheel"
+          }
+        ]
+      }
+    ],
+    [
+      "@semantic-release/git",
+      {
+        "assets": ["CHANGELOG.md", "pyproject.toml"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }
+    ]
+  ]
+}

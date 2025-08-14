@@ -4,11 +4,14 @@
     "config:base",
     ":dependencyDashboard",
     ":semanticCommits",
-    ":separatePatchReleases"
+    ":separatePatchReleases",
+    ":enablePreCommit"
   ],
   "schedule": [
     "before 6am on monday"
   ],
+  "assigneesFromCodeOwners": true,
+  "reviewersFromCodeOwners": true,
   "packageRules": [
     {
       "matchPackagePatterns": ["*"],
@@ -16,13 +19,27 @@
     },
     {
       "matchDepTypes": ["devDependencies"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchPackageNames": ["pytest", "black", "ruff", "mypy"],
+      "groupName": "dev tools",
       "automerge": true
+    },
+    {
+      "matchPackageNames": ["google-generativeai", "mcp"],
+      "groupName": "core dependencies",
+      "reviewersFromCodeOwners": true
     }
   ],
   "python": {
     "ignoreDeps": []
   },
   "pip_requirements": {
-    "fileMatch": ["^requirements.*\\.txt$"]
-  }
+    "fileMatch": ["^requirements.*\\.txt$", "^pyproject\\.toml$"]
+  },
+  "commitMessageTopic": "{{depName}}",
+  "commitMessageExtra": "to {{{newVersion}}}",
+  "commitMessageSuffix": ""
 }

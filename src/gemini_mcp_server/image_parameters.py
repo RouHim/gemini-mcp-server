@@ -2,7 +2,7 @@
 
 from enum import Enum
 from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class AspectRatio(str, Enum):
@@ -47,7 +47,8 @@ class ImageGenerationParameters(BaseModel):
     quality: ImageQuality = Field(default=ImageQuality.STANDARD, description="Image quality setting")
     temperature: float = Field(default=0.7, ge=0.0, le=1.0, description="Creativity level (0.0 = deterministic, 1.0 = very creative)")
     
-    @validator('prompt')
+    @field_validator('prompt')
+    @classmethod
     def validate_prompt(cls, v):
         """Validate prompt content."""
         if not v.strip():

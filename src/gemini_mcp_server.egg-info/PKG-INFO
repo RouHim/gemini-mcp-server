@@ -1,30 +1,57 @@
+Metadata-Version: 2.4
+Name: gemini-mcp-server
+Version: 0.1.0
+Summary: MCP server for Gemini image generation optimized for free tier usage
+Author-email: RouHim <rouven@himmelstein.info>
+Project-URL: Homepage, https://github.com/RouHim/gemini-mcp-server
+Project-URL: Bug Reports, https://github.com/RouHim/gemini-mcp-server/issues
+Project-URL: Source, https://github.com/RouHim/gemini-mcp-server
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: mcp>=1.0.0
+Requires-Dist: google-generativeai>=0.3.0
+Requires-Dist: aiohttp>=3.9.0
+Requires-Dist: asyncio-throttle>=1.0.2
+Requires-Dist: pydantic>=2.5.0
+Requires-Dist: python-dotenv>=1.0.0
+Requires-Dist: pillow>=10.1.0
+Requires-Dist: tenacity>=8.2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.1.0; extra == "dev"
+Requires-Dist: black>=23.11.0; extra == "dev"
+Requires-Dist: mypy>=1.7.0; extra == "dev"
+Requires-Dist: ruff>=0.1.6; extra == "dev"
+
 # Gemini MCP Server
 
-[![CI](https://github.com/RouHim/gemini-mcp-server/workflows/CI/badge.svg)](https://github.com/RouHim/gemini-mcp-server/actions)
-[![codecov](https://codecov.io/gh/RouHim/gemini-mcp-server/branch/main/graph/badge.svg)](https://codecov.io/gh/RouHim/gemini-mcp-server)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+MCP server for Gemini image generation optimized for free tier usage with comprehensive features for production use.
 
-A Model Context Protocol (MCP) server for Gemini image generation, optimized for free tier usage with comprehensive production-ready features.
-
-## ✨ Features
+## Features
 
 - 🎨 **Advanced Image Generation**: Generate images from text prompts using Google's Gemini 2.0 Flash Experimental
 - 🚀 **Free Tier Optimized**: Built specifically for free tier rate limits (15 requests/minute) and quotas
-- ⚡ **Async Queue Management**: Intelligent request queuing with priority support and SQLite persistence
+- ⚡ **Async Queue Management**: Intelligent request queuing with priority support and persistence
 - 🛡️ **Robust Error Handling**: Comprehensive retry logic, circuit breaker pattern, and structured error responses
 - 📊 **History Tracking**: Complete generation history with metadata, search, and export capabilities
 - 🔧 **Configurable Parameters**: Customize aspect ratios, styles, safety settings, and quality levels
 - 🗄️ **Optional Local Storage**: Save generated images locally with automatic cleanup policies
 - 📈 **Usage Statistics**: Track generation metrics, success rates, and storage usage
-- 🧪 **Production Ready**: 85%+ test coverage, type safety, and comprehensive CI/CD
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Python 3.10+** (tested on 3.10, 3.11, 3.12)
-- **Google AI API key** ([get one here](https://makersuite.google.com/app/apikey))
+- Python 3.10 or higher
+- Google AI API key (get one [here](https://makersuite.google.com/app/apikey))
 
 ### Installation
 
@@ -33,14 +60,10 @@ A Model Context Protocol (MCP) server for Gemini image generation, optimized for
 git clone https://github.com/RouHim/gemini-mcp-server.git
 cd gemini-mcp-server
 
-# Create and activate virtual environment (recommended)
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
 # Install dependencies
 pip install -e .
 
-# Copy environment template and configure your API key
+# Copy environment template and add your API key
 cp .env.example .env
 # Edit .env and add your GEMINI_API_KEY
 ```
@@ -63,14 +86,11 @@ MAX_IMAGE_COUNT=100                      # Maximum number of images to keep
 ### Usage
 
 ```bash
-# Start the MCP server (recommended)
+# Start the MCP server
 python -m gemini_mcp_server.server
 
-# Alternative entry point
+# Or use the main entry point
 python main.py
-
-# Or use the installed command
-gemini-mcp-server
 ```
 
 ## MCP Tools
@@ -216,137 +236,48 @@ The server is specifically designed to work efficiently with Gemini's free tier:
 - **Structured exception hierarchy** for precise error handling
 - **Fallback mechanisms** ensure service availability
 
-## 🛠️ Development
-
-### Setting Up Development Environment
-
-```bash
-# Quick setup with Makefile (recommended)
-make dev-setup
-
-# Manual setup
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -e .[dev]
-
-# Verify installation
-python -c "import gemini_mcp_server; print('✓ Package installed successfully')"
-make validate
-```
-
-### Development Commands
-
-The project includes a comprehensive Makefile for common development tasks:
-
-```bash
-# Show all available commands
-make help
-
-# Quality checks
-make format          # Format code with Black
-make lint           # Lint with Ruff  
-make typecheck      # Type check with MyPy
-make quality        # Run all quality checks
-
-# Testing
-make test           # Run all tests
-make test-unit      # Run unit tests only
-make test-coverage  # Run tests with coverage report
-
-# Development workflow
-make all            # Run quality checks + tests
-make ci             # Run full CI pipeline locally
-make serve          # Start development server
-```
+## Development
 
 ### Running Tests
 
 ```bash
-# Run the full test suite
+# Install development dependencies
+pip install -e .[dev]
+
+# Run validation tests
+python test_implementation.py
+
+# Run full test suite (requires pytest)
 pytest tests/ -v
 
-# Run with coverage reporting
-pytest --cov=src tests/ --cov-report=html --cov-report=term
+# Run with coverage
+pytest --cov=src tests/
 
-# Run specific test categories
-pytest tests/ -m unit          # Unit tests only
-pytest tests/ -m integration   # Integration tests only
-pytest tests/ -m smoke         # Critical functionality tests
-
-# Run a single test file
-pytest tests/test_server.py -v
-
-# Run with real API testing (requires GEMINI_API_KEY)
-pytest tests/test_integration.py -v
-```
-
-### Code Quality and Linting
-
-```bash
-# Format code with Black
-black src/ tests/
-
-# Lint with Ruff
+# Linting and formatting
 ruff check src/ tests/
-
-# Type checking with MyPy
+black src/ tests/
 mypy src/
-
-# Run all quality checks
-black src/ tests/ && ruff check src/ tests/ && mypy src/
 ```
 
-### Project Structure
+### Contributing
 
-```
-gemini-mcp-server/
-├── src/gemini_mcp_server/     # Main package
-│   ├── __init__.py
-│   ├── server.py              # MCP server implementation
-│   ├── gemini_client.py       # Google AI API client
-│   ├── queue_manager.py       # Async request queue
-│   ├── history_manager.py     # Generation history tracking
-│   ├── rate_limiter.py        # Rate limiting logic
-│   ├── retry_handler.py       # Retry and error handling
-│   ├── image_parameters.py    # Parameter validation
-│   └── exceptions.py          # Custom exceptions
-├── tests/                     # Test suite (85%+ coverage)
-│   ├── conftest.py           # Test fixtures and configuration
-│   ├── test_server.py        # Server tests
-│   ├── test_gemini_client.py # Client tests
-│   ├── test_queue_manager.py # Queue tests
-│   ├── test_history_manager.py # History tests
-│   ├── test_rate_limiter.py  # Rate limiter tests
-│   ├── test_retry_handler.py # Retry logic tests
-│   └── test_integration.py   # End-to-end tests
-├── .github/workflows/        # CI/CD pipelines
-├── main.py                   # Entry point
-├── pyproject.toml           # Project configuration
-└── README.md               # This file
-```
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Ensure all tests pass and code is properly formatted
+5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-## 🤝 Support & Community
+## Support
 
 - **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/RouHim/gemini-mcp-server/issues)
 - **Discussions**: Join the conversation in [GitHub Discussions](https://github.com/RouHim/gemini-mcp-server/discussions)
-- **Security**: Report security issues via [GitHub Security Advisories](https://github.com/RouHim/gemini-mcp-server/security/advisories/new)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
-- **[Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/python-sdk)** - Framework for AI tool integration
-- **[Google Gemini AI](https://deepmind.google/technologies/gemini/)** - Powerful image generation API
-- **Community contributors** - Thank you for improvements and feedback
-
----
-
-<div align="center">
-
-**Built with ❤️ for the MCP ecosystem**
-
-[Report Bug](https://github.com/RouHim/gemini-mcp-server/issues) · [Request Feature](https://github.com/RouHim/gemini-mcp-server/issues) · [Contribute](https://github.com/RouHim/gemini-mcp-server/blob/main/README.md#contributing)
-
-</div>
+- Built with the [Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/python-sdk)
+- Powered by [Google Gemini AI](https://deepmind.google/technologies/gemini/)
+- Optimized for free tier usage patterns
