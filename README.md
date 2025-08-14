@@ -19,31 +19,12 @@ A Model Context Protocol (MCP) server for Gemini image generation, optimized for
 
 ## Quick Start
 
-### Automated Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/RouHim/gemini-mcp-server.git
-cd gemini-mcp-server
-
-# Run the installation script
-./install.sh
-```
-
-The script will:
-- Install the package
-- Create configuration files
-- Set up Claude Desktop integration (if detected)
-- Guide you through API key setup
-
-### Manual Installation
-
-#### Prerequisites
+### Prerequisites
 
 - Python 3.10+
 - [Google AI API key](https://makersuite.google.com/app/apikey)
 
-#### Installation Steps
+### Installation
 
 ```bash
 # Clone and install
@@ -58,15 +39,7 @@ cp .env.template .env
 
 ## Integration with Claude Desktop
 
-### Option 1: Automatic Setup (Recommended)
-
-Run the installation script which will automatically configure Claude Desktop:
-
-```bash
-./install.sh
-```
-
-### Option 2: Manual Configuration
+### Configuration Steps
 
 1. **Install the server:**
    ```bash
