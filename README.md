@@ -200,25 +200,22 @@ MAX_CONCURRENT_REQUESTS=3
 ```bash
 # Install development dependencies
 pip install -e .[dev]
-
-# Or use Makefile
-make dev-setup
 ```
 
 ### Commands
 
 ```bash
 # Quality checks
-make format      # Black formatting
-make lint        # Ruff linting
-make typecheck   # MyPy type checking
+black src/ tests/ scripts/        # Format code
+ruff check src/ tests/ scripts/   # Lint code
+mypy src/                         # Type check
 
 # Testing
-make test        # Run all tests
-make test-coverage  # Run with coverage
+pytest tests/ -v                  # Run all tests
+pytest tests/ -v --cov=src --cov-report=html --cov-report=term  # Run with coverage
 
-# All checks
-make all         # Format + lint + typecheck + test
+# All at once
+black src/ tests/ scripts/ && ruff check src/ tests/ scripts/ && mypy src/ && pytest tests/ -v
 ```
 
 ### Project Structure
