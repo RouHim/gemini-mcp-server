@@ -7,6 +7,9 @@ import google.generativeai as genai
 from google.generativeai.types import HarmCategory, HarmBlockThreshold, GenerationConfig
 from PIL import Image
 
+from .exceptions import ValidationError, ModelError, AuthenticationError
+from .retry_handler import circuit_breaker_check, retry_on_failure, map_google_exception
+
 logger = logging.getLogger(__name__)
 
 
@@ -34,28 +37,32 @@ class GeminiImageClient:
             
             logger.info("Gemini client initialized successfully")
         except Exception as e:
-            logger.error(f"Failed to initialize Gemini client: {e}")
-            raise
+            mapped_exception = map_google_exception(e)
+            logger.error(f"Failed to initialize Gemini client: {mapped_exception}")
+            raise mapped_exception
     
-    async def generate_image(self, prompt: str) -> Dict[str, Any]:
+    @circuit_breaker_check
+    @retry_on_failure(max_attempts=3, base_delay=1.0, max_delay=60.0)
+    async def generate_image(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
         Generate an image from a text prompt using Gemini 2.0 Flash experimental.
         
         Args:
             prompt: Text description of the image to generate
+            **kwargs: Additional parameters for image generation
             
         Returns:
             Dictionary containing image data and metadata
             
         Raises:
-            ValueError: If the model is not initialized or prompt is invalid
-            Exception: If image generation fails
+            ValidationError: If the model is not initialized or prompt is invalid
+            ModelError: If image generation fails
         """
         if not self.model:
-            raise ValueError("Gemini client not initialized")
+            raise ValidationError("Gemini client not initialized")
         
         if not prompt or not prompt.strip():
-            raise ValueError("Prompt cannot be empty")
+            raise ValidationError("Prompt cannot be empty")
         
         try:
             # Create a prompt that encourages image generation
@@ -63,17 +70,17 @@ class GeminiImageClient:
             
             # Configure generation for image output
             generation_config = GenerationConfig(
-                temperature=0.7,  # Some creativity but not too random
-                top_p=0.9,
-                top_k=40,
-                max_output_tokens=2048,
+                temperature=kwargs.get('temperature', 0.7),
+                top_p=kwargs.get('top_p', 0.9),
+                top_k=kwargs.get('top_k', 40),
+                max_output_tokens=kwargs.get('max_output_tokens', 2048),
             )
             
             # Generate content with the model
             response = self.model.generate_content(
                 image_prompt,
                 generation_config=generation_config,
-                safety_settings=self._get_safety_settings()
+                safety_settings=self._get_safety_settings(kwargs.get('safety_level', 'moderate'))
             )
             
             # Check if the response contains an image
@@ -93,6 +100,7 @@ class GeminiImageClient:
                     "mime_type": mime_type,
                     "prompt": prompt,
                     "model": "gemini-2.0-flash-exp",
+                    "parameters": kwargs,
                 }
             else:
                 # Fallback to placeholder if no image was generated
@@ -103,10 +111,12 @@ class GeminiImageClient:
                     "mime_type": response["mime_type"],
                     "prompt": prompt,
                     "model": "placeholder",
+                    "parameters": kwargs,
                 }
             
         except Exception as e:
-            logger.error(f"Error generating image: {e}")
+            mapped_exception = map_google_exception(e)
+            logger.error(f"Error generating image: {mapped_exception}")
             # In case of any error, fall back to placeholder
             response = await self._generate_image_placeholder(prompt)
             return {
@@ -114,7 +124,8 @@ class GeminiImageClient:
                 "mime_type": response["mime_type"],
                 "prompt": prompt,
                 "model": "placeholder-error",
-                "error": str(e)
+                "parameters": kwargs,
+                "error": str(mapped_exception)
             }
     
     async def _generate_image_placeholder(self, prompt: str) -> Dict[str, Any]:
@@ -146,13 +157,20 @@ class GeminiImageClient:
             logger.error(f"Error creating placeholder image: {e}")
             raise
     
-    def _get_safety_settings(self) -> Dict[HarmCategory, HarmBlockThreshold]:
+    def _get_safety_settings(self, safety_level: str = 'moderate') -> Dict[HarmCategory, HarmBlockThreshold]:
         """Get safety settings for content generation."""
+        if safety_level == 'strict':
+            threshold = HarmBlockThreshold.BLOCK_LOW_AND_ABOVE
+        elif safety_level == 'permissive':
+            threshold = HarmBlockThreshold.BLOCK_ONLY_HIGH
+        else:  # moderate
+            threshold = HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE
+            
         return {
-            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: threshold,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: threshold,
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: threshold,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: threshold,
         }
     
     async def validate_api_key(self) -> bool:
@@ -171,5 +189,6 @@ class GeminiImageClient:
             return response is not None
             
         except Exception as e:
-            logger.error(f"API key validation failed: {e}")
+            mapped_exception = map_google_exception(e)
+            logger.error(f"API key validation failed: {mapped_exception}")
             return False
