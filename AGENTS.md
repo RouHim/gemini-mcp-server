@@ -1,6 +1,7 @@
 # Agent Guidelines for Gemini MCP Server
 
 ## Build/Test Commands
+### Direct Commands
 - **Install deps**: `pip install -e .[dev]`
 - **Run tests**: `pytest tests/` 
 - **Single test**: `pytest tests/test_server.py::TestMCPServer::test_list_tools -v`
@@ -8,6 +9,18 @@
 - **Format**: `black src/ tests/`
 - **Type check**: `mypy src/`
 - **Coverage**: `pytest --cov=src tests/`
+
+### Just Commands (Recommended)
+- **Install deps**: `just install`
+- **Run tests**: `just test`
+- **Single test**: `just test-one test_server.py::TestMCPServer::test_list_tools`
+- **Lint**: `just lint`
+- **Format**: `just format`
+- **Type check**: `just typecheck`
+- **Coverage**: `just test-coverage`
+- **All quality**: `just quality`
+- **Dev cycle**: `just dev` (format + lint + test)
+- **CI pipeline**: `just ci`
 
 ## Code Style
 - Use **Black** formatting (88 char line length)

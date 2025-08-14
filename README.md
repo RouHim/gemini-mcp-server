@@ -16,6 +16,7 @@ A Model Context Protocol (MCP) server for Gemini image generation, optimized for
 - 🗄️ Optional local image storage
 - 🤖 Full Claude Desktop integration
 - 🔧 opencode compatible
+- 🛠️ [Just](https://github.com/casey/just) command runner for easy development
 
 ## Quick Start
 
@@ -204,6 +205,7 @@ pip install -e .[dev]
 
 ### Commands
 
+#### Option 1: Direct Commands
 ```bash
 # Quality checks
 black src/ tests/ scripts/        # Format code
@@ -216,6 +218,26 @@ pytest tests/ -v --cov=src --cov-report=html --cov-report=term  # Run with cover
 
 # All at once
 black src/ tests/ scripts/ && ruff check src/ tests/ scripts/ && mypy src/ && pytest tests/ -v
+```
+
+#### Option 2: Using Just (Recommended)
+Install [just](https://github.com/casey/just) command runner:
+
+```bash
+# Install just
+cargo install just  # Or: brew install just, scoop install just
+
+# See all available commands
+just
+
+# Common development tasks
+just dev-setup      # Set up development environment
+just quality         # Run all quality checks
+just test           # Run tests
+just dev            # Format + lint + test
+just ci             # Full CI pipeline
+just clean          # Clean artifacts
+just serve          # Start development server
 ```
 
 ### Project Structure
