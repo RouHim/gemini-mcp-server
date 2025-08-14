@@ -44,8 +44,8 @@ Homepage = "https://github.com/RouHim/gemini-mcp-server"
 "Bug Reports" = "https://github.com/RouHim/gemini-mcp-server/issues"
 "Source" = "https://github.com/RouHim/gemini-mcp-server"
 
-[project.scripts]
-gemini-mcp-server = "gemini_mcp_server.server:main"
+[project.entry-points."console_scripts"]
+gemini-mcp-server = "gemini_mcp_server.server:console_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

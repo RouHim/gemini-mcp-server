@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schemas.mcp.io/config.json",
+  "mcpServers": {
+    "gemini-mcp-server": {
+      "command": "gemini-mcp-server",
+      "env": {
+        "GOOGLE_API_KEY": "your-google-api-key-here"
+      }
+    }
+  }
+}
+
+# Alternative configuration using Python module directly:
+# {
+#   "$schema": "https://schemas.mcp.io/config.json",
+#   "mcpServers": {
+#     "gemini-mcp-server": {
+#       "command": "python",
+#       "args": ["-m", "gemini_mcp_server.server"],
+#       "env": {
+#         "GOOGLE_API_KEY": "your-google-api-key-here"
+#       }
+#     }
+#   }
+# }

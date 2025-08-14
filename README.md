@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Model Context Protocol (MCP) server for Gemini image generation, optimized for free tier usage.
+A Model Context Protocol (MCP) server for Gemini image generation, optimized for free tier usage with Claude Desktop and opencode.
 
 ## Features
 
@@ -14,15 +14,36 @@ A Model Context Protocol (MCP) server for Gemini image generation, optimized for
 - 🛡️ Retry logic and error handling
 - 📊 Generation history tracking
 - 🗄️ Optional local image storage
+- 🤖 Full Claude Desktop integration
+- 🔧 opencode compatible
 
 ## Quick Start
 
-### Prerequisites
+### Automated Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/RouHim/gemini-mcp-server.git
+cd gemini-mcp-server
+
+# Run the installation script
+./install.sh
+```
+
+The script will:
+- Install the package
+- Create configuration files
+- Set up Claude Desktop integration (if detected)
+- Guide you through API key setup
+
+### Manual Installation
+
+#### Prerequisites
 
 - Python 3.10+
 - [Google AI API key](https://makersuite.google.com/app/apikey)
 
-### Installation
+#### Installation Steps
 
 ```bash
 # Clone and install
@@ -30,15 +51,108 @@ git clone https://github.com/RouHim/gemini-mcp-server.git
 cd gemini-mcp-server
 pip install -e .
 
-# Configure API key
-cp .env.example .env
+# Configure environment
+cp .env.template .env
 # Edit .env and add your GOOGLE_API_KEY
 ```
 
-### Usage
+## Integration with Claude Desktop
+
+### Option 1: Automatic Setup (Recommended)
+
+Run the installation script which will automatically configure Claude Desktop:
 
 ```bash
-# Start the server
+./install.sh
+```
+
+### Option 2: Manual Configuration
+
+1. **Install the server:**
+   ```bash
+   pip install -e .
+   ```
+
+2. **Configure Claude Desktop:**
+   
+   Find your Claude Desktop configuration directory:
+   - **macOS**: `~/Library/Application Support/Claude/`
+   - **Windows**: `%APPDATA%/Claude/`
+   - **Linux**: `~/.config/claude/`
+
+3. **Create or edit `mcp_settings.json`:**
+   ```json
+   {
+     "mcpServers": {
+       "gemini-mcp-server": {
+         "command": "gemini-mcp-server",
+         "env": {
+           "GOOGLE_API_KEY": "your-google-api-key-here"
+         }
+       }
+     }
+   }
+   ```
+
+4. **Restart Claude Desktop**
+
+### Testing Claude Integration
+
+Once configured, you can use these commands in Claude Desktop:
+
+```
+Generate an image of a sunset over mountains
+```
+
+```
+Show me my image generation history
+```
+
+```
+Check the status of my image generation queue
+```
+
+## Integration with opencode
+
+### Configuration
+
+Add the server to your MCP configuration (usually `mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "gemini-mcp-server": {
+      "command": "gemini-mcp-server",
+      "env": {
+        "GOOGLE_API_KEY": "your-google-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### Alternative: Python Module
+
+If you prefer to run the server as a Python module:
+
+```json
+{
+  "mcpServers": {
+    "gemini-mcp-server": {
+      "command": "python",
+      "args": ["-m", "gemini_mcp_server.server"],
+      "env": {
+        "GOOGLE_API_KEY": "your-google-api-key-here"
+      }
+    }
+  }
+}
+```
+
+## Standalone Usage
+
+```bash
+# Start the server directly
 python -m gemini_mcp_server.server
 
 # Or use the installed command
@@ -76,12 +190,26 @@ Clean up old stored images.
 
 ## Configuration
 
-Environment variables (`.env` file):
+### Environment Variables
+
+Create a `.env` file (copy from `.env.template`):
 
 ```bash
 # Required
 GOOGLE_API_KEY=your_api_key_here
 
+# Optional settings
+LOG_LEVEL=INFO
+MAX_REQUESTS_PER_MINUTE=15
+IMAGE_OUTPUT_DIR=./generated_images
+HISTORY_DB_PATH=./queue_persistence.db
+```
+
+### Advanced Configuration
+
+For more control, you can configure additional settings:
+
+```bash
 # Optional storage
 IMAGE_STORAGE_PATH=./images
 MAX_STORAGE_SIZE_MB=1000
@@ -89,7 +217,6 @@ MAX_IMAGE_COUNT=100
 CLEANUP_AFTER_DAYS=30
 
 # Optional rate limiting
-MAX_REQUESTS_PER_MINUTE=15
 MAX_CONCURRENT_REQUESTS=3
 ```
 
@@ -141,6 +268,33 @@ tests/                     # Test suite
 └── ...
 ```
 
+## Troubleshooting
+
+### Common Issues
+
+1. **"GOOGLE_API_KEY not found"**
+   - Ensure your `.env` file contains `GOOGLE_API_KEY=your-key-here`
+   - Verify the API key is valid at [Google AI Studio](https://makersuite.google.com/app/apikey)
+
+2. **"Module not found"**
+   - Run `pip install -e .` to install the package
+   - Ensure you're in the correct directory
+
+3. **"Rate limit exceeded"**
+   - The free tier allows 15 requests per minute
+   - Check queue status with `get_queue_status` tool
+
+4. **Claude Desktop not detecting server**
+   - Restart Claude Desktop after configuration
+   - Check `mcp_settings.json` syntax is valid
+   - Verify the server command is accessible
+
+### Getting Help
+
+- Check the [Issues](https://github.com/RouHim/gemini-mcp-server/issues) page
+- Review logs for error messages
+- Ensure all dependencies are installed
+
 ## License
 
 MIT License - see LICENSE file for details.
@@ -150,3 +304,5 @@ MIT License - see LICENSE file for details.
 - [Issues](https://github.com/RouHim/gemini-mcp-server/issues)
 - [Model Context Protocol](https://github.com/modelcontextprotocol/python-sdk)
 - [Google Gemini AI](https://deepmind.google/technologies/gemini/)
+- [Claude Desktop](https://claude.ai/download)
+- [opencode](https://github.com/sst/opencode)

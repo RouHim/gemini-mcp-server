@@ -6,14 +6,14 @@ from src.gemini_mcp_server.image_parameters import (
     AspectRatio,
     ImageStyle,
     SafetyLevel,
-    ImageQuality
+    ImageQuality,
 )
 
 
 def test_image_generation_parameters_default():
     """Test default parameters."""
     params = ImageGenerationParameters(prompt="test prompt")
-    
+
     assert params.prompt == "test prompt"
     assert params.aspect_ratio == AspectRatio.SQUARE
     assert params.style == ImageStyle.REALISTIC
@@ -30,9 +30,9 @@ def test_image_generation_parameters_custom():
         style=ImageStyle.ARTISTIC,
         safety_level=SafetyLevel.STRICT,
         quality=ImageQuality.HIGH,
-        temperature=0.5
+        temperature=0.5,
     )
-    
+
     assert params.prompt == "test prompt"
     assert params.aspect_ratio == AspectRatio.LANDSCAPE_16_9
     assert params.style == ImageStyle.ARTISTIC
@@ -46,11 +46,11 @@ def test_prompt_validation():
     # Empty prompt should fail
     with pytest.raises(ValueError):
         ImageGenerationParameters(prompt="")
-    
+
     # Whitespace-only prompt should fail
     with pytest.raises(ValueError):
         ImageGenerationParameters(prompt="   ")
-    
+
     # Valid prompt should work
     params = ImageGenerationParameters(prompt="  test prompt  ")
     assert params.prompt == "test prompt"
@@ -61,11 +61,11 @@ def test_temperature_validation():
     # Valid temperature
     params = ImageGenerationParameters(prompt="test", temperature=0.5)
     assert params.temperature == 0.5
-    
+
     # Invalid temperatures should fail
     with pytest.raises(ValueError):
         ImageGenerationParameters(prompt="test", temperature=-0.1)
-    
+
     with pytest.raises(ValueError):
         ImageGenerationParameters(prompt="test", temperature=1.1)
 
@@ -74,25 +74,21 @@ def test_to_generation_config():
     """Test generation config conversion."""
     # Standard quality
     params = ImageGenerationParameters(
-        prompt="test",
-        quality=ImageQuality.STANDARD,
-        temperature=0.8
+        prompt="test", quality=ImageQuality.STANDARD, temperature=0.8
     )
     config = params.to_generation_config()
-    
+
     assert config["temperature"] == 0.8
     assert config["max_output_tokens"] == 2048
     assert config["top_p"] == 0.9
     assert config["top_k"] == 40
-    
+
     # High quality
     params = ImageGenerationParameters(
-        prompt="test",
-        quality=ImageQuality.HIGH,
-        temperature=0.5
+        prompt="test", quality=ImageQuality.HIGH, temperature=0.5
     )
     config = params.to_generation_config()
-    
+
     assert config["temperature"] == 0.5
     assert config["max_output_tokens"] == 4096
     assert config["top_p"] == 0.95
@@ -104,9 +100,9 @@ def test_get_enhanced_prompt():
     params = ImageGenerationParameters(
         prompt="a cat",
         style=ImageStyle.PHOTOGRAPHIC,
-        aspect_ratio=AspectRatio.LANDSCAPE_16_9
+        aspect_ratio=AspectRatio.LANDSCAPE_16_9,
     )
-    
+
     enhanced = params.get_enhanced_prompt()
     assert "realistic photograph" in enhanced
     assert "wide landscape format" in enhanced

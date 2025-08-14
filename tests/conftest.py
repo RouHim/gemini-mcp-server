@@ -78,17 +78,17 @@ def mock_genai():
     with patch("src.gemini_mcp_server.gemini_client.genai") as mock:
         # Mock configure
         mock.configure = MagicMock()
-        
+
         # Mock model
         mock_model = MagicMock()
         mock.GenerativeModel.return_value = mock_model
-        
+
         # Mock response
         mock_response = MagicMock()
         mock_response.parts = [MagicMock()]
         mock_response.parts[0].data = b"fake_image_data"
         mock_model.generate_content = AsyncMock(return_value=mock_response)
-        
+
         return mock
 
 
@@ -104,7 +104,9 @@ def mock_aiohttp_session():
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.read.return_value = b"fake_image_data"
-        mock_session.return_value.__aenter__.return_value.get.return_value.__aenter__.return_value = mock_response
+        mock_session.return_value.__aenter__.return_value.get.return_value.__aenter__.return_value = (
+            mock_response
+        )
         return mock_session
 
 
@@ -161,7 +163,7 @@ def mock_env_vars():
         "RATE_LIMIT_CALLS": "15",
         "RATE_LIMIT_WINDOW": "60",
     }
-    
+
     with patch.dict(os.environ, env_vars):
         return env_vars
 
@@ -169,11 +171,13 @@ def mock_env_vars():
 # File I/O mocks
 def mock_file_operations():
     """Mock file operations."""
-    with patch("builtins.open", create=True) as mock_open, \
-         patch("os.makedirs") as mock_makedirs, \
-         patch("os.path.exists") as mock_exists, \
-         patch("os.unlink") as mock_unlink:
-        
+    with (
+        patch("builtins.open", create=True) as mock_open,
+        patch("os.makedirs") as mock_makedirs,
+        patch("os.path.exists") as mock_exists,
+        patch("os.unlink") as mock_unlink,
+    ):
+
         mock_exists.return_value = True
         return {
             "open": mock_open,

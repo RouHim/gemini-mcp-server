@@ -10,7 +10,7 @@ from src.gemini_mcp_server.exceptions import (
     NetworkError,
     ValidationError,
     ModelError,
-    CircuitBreakerOpenError
+    CircuitBreakerOpenError,
 )
 
 

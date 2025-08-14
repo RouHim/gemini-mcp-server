@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 class CircuitBreaker:
     """Circuit breaker pattern implementation for handling repeated failures."""
-    
+
     def __init__(
         self,
         failure_threshold: int = 5,
@@ -45,42 +45,45 @@ class CircuitBreaker:
         self.failure_count = 0
         self.last_failure_time: Optional[float] = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
-    
+
     def can_proceed(self) -> bool:
         """Check if the circuit breaker allows the operation to proceed."""
         if self.state == "CLOSED":
             return True
-        
+
         if self.state == "OPEN":
-            if self.last_failure_time and time.time() - self.last_failure_time >= self.timeout:
+            if (
+                self.last_failure_time
+                and time.time() - self.last_failure_time >= self.timeout
+            ):
                 self.state = "HALF_OPEN"
                 return True
             return False
-        
+
         # HALF_OPEN state
         return True
-    
+
     def on_success(self):
         """Called when operation succeeds."""
         self.failure_count = 0
         self.state = "CLOSED"
-    
+
     def on_failure(self, exception: Exception):
         """Called when operation fails."""
         if isinstance(exception, self.expected_exception):
             self.failure_count += 1
             self.last_failure_time = time.time()
-            
+
             if self.failure_count >= self.failure_threshold:
                 self.state = "OPEN"
-                logger.warning(f"Circuit breaker opened after {self.failure_count} failures")
+                logger.warning(
+                    f"Circuit breaker opened after {self.failure_count} failures"
+                )
 
 
 # Global circuit breaker for Gemini API calls
 gemini_circuit_breaker = CircuitBreaker(
-    failure_threshold=3,
-    timeout=300.0,  # 5 minutes
-    expected_exception=Exception
+    failure_threshold=3, timeout=300.0, expected_exception=Exception  # 5 minutes
 )
 
 
@@ -98,7 +101,10 @@ def map_google_exception(exception: Exception) -> Exception:
         if "content policy" in str(exception).lower():
             return ContentPolicyError(str(exception))
         return ModelError(str(exception))
-    elif isinstance(exception, (google_exceptions.DeadlineExceeded, google_exceptions.ServiceUnavailable)):
+    elif isinstance(
+        exception,
+        (google_exceptions.DeadlineExceeded, google_exceptions.ServiceUnavailable),
+    ):
         return NetworkError(str(exception))
     elif isinstance(exception, google_exceptions.GoogleAPIError):
         return ModelError(str(exception))
@@ -108,11 +114,12 @@ def map_google_exception(exception: Exception) -> Exception:
 
 def circuit_breaker_check(func):
     """Decorator to check circuit breaker before function execution."""
+
     @wraps(func)
     async def wrapper(*args, **kwargs):
         if not gemini_circuit_breaker.can_proceed():
             raise CircuitBreakerOpenError()
-        
+
         try:
             result = await func(*args, **kwargs)
             gemini_circuit_breaker.on_success()
@@ -121,7 +128,7 @@ def circuit_breaker_check(func):
             mapped_exception = map_google_exception(e)
             gemini_circuit_breaker.on_failure(mapped_exception)
             raise mapped_exception
-    
+
     return wrapper
 
 
@@ -132,20 +139,20 @@ def retry_on_failure(
     exponential_base: int = 2,
 ):
     """Decorator for retrying failed operations with exponential backoff."""
-    
+
     def decorator(func):
         @retry(
             stop=stop_after_attempt(max_attempts),
             wait=wait_exponential(
-                multiplier=base_delay,
-                max=max_delay,
-                exp_base=exponential_base
+                multiplier=base_delay, max=max_delay, exp_base=exponential_base
             ),
-            retry=retry_if_exception_type((
-                NetworkError,
-                ModelError,
-                RateLimitError,
-            )),
+            retry=retry_if_exception_type(
+                (
+                    NetworkError,
+                    ModelError,
+                    RateLimitError,
+                )
+            ),
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
         @wraps(func)
@@ -155,9 +162,9 @@ def retry_on_failure(
             except RetryError as e:
                 # If all retries failed, raise the last exception
                 raise e.last_attempt.exception()
-        
+
         return wrapper
-    
+
     return decorator
 
 
@@ -165,12 +172,12 @@ async def handle_rate_limit(exception: RateLimitError, attempt: int = 1) -> None
     """Handle rate limit errors with appropriate backoff."""
     base_delay = 2.0
     max_delay = 300.0  # 5 minutes max
-    
-    if hasattr(exception, 'retry_after') and exception.retry_after:
+
+    if hasattr(exception, "retry_after") and exception.retry_after:
         delay = min(exception.retry_after, max_delay)
     else:
-        delay = min(base_delay * (2 ** attempt), max_delay)
-    
+        delay = min(base_delay * (2**attempt), max_delay)
+
     logger.warning(f"Rate limited, waiting {delay} seconds before retry")
     await asyncio.sleep(delay)
 
@@ -178,26 +185,30 @@ async def handle_rate_limit(exception: RateLimitError, attempt: int = 1) -> None
 def get_user_friendly_error_message(exception: Exception) -> str:
     """Convert exceptions to user-friendly error messages."""
     if isinstance(exception, RateLimitError):
-        return "Rate limit exceeded. Please wait a moment before making another request."
-    
+        return (
+            "Rate limit exceeded. Please wait a moment before making another request."
+        )
+
     elif isinstance(exception, QuotaExceededError):
-        return "API quota exceeded. Please try again later or check your API usage limits."
-    
+        return (
+            "API quota exceeded. Please try again later or check your API usage limits."
+        )
+
     elif isinstance(exception, ContentPolicyError):
         return "Content violates platform policies. Please modify your request and try again."
-    
+
     elif isinstance(exception, AuthenticationError):
         return "Authentication failed. Please check your API key configuration."
-    
+
     elif isinstance(exception, NetworkError):
         return "Network error occurred. Please check your connection and try again."
-    
+
     elif isinstance(exception, CircuitBreakerOpenError):
         return "Service temporarily unavailable due to repeated failures. Please try again later."
-    
+
     elif isinstance(exception, ModelError):
         return f"Model error: {str(exception)}"
-    
+
     else:
         return f"An unexpected error occurred: {str(exception)}"
 
@@ -206,7 +217,7 @@ def create_structured_error_response(exception: Exception) -> Dict[str, Any]:
     """Create a structured error response for MCP clients."""
     return {
         "error": True,
-        "error_code": getattr(exception, 'error_code', 'UNKNOWN_ERROR'),
+        "error_code": getattr(exception, "error_code", "UNKNOWN_ERROR"),
         "message": get_user_friendly_error_message(exception),
         "details": str(exception) if logger.isEnabledFor(logging.DEBUG) else None,
         "timestamp": time.time(),
