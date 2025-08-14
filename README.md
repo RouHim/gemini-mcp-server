@@ -240,26 +240,6 @@ just clean          # Clean artifacts
 just serve          # Start development server
 ```
 
-### Project Structure
-
-```
-src/gemini_mcp_server/
-├── server.py              # MCP server
-├── gemini_client.py       # Google AI client
-├── queue_manager.py       # Request queue
-├── history_manager.py     # History tracking
-├── rate_limiter.py        # Rate limiting
-├── retry_handler.py       # Error handling
-├── image_parameters.py    # Parameter validation
-└── exceptions.py          # Custom exceptions
-
-tests/                     # Test suite
-├── test_server.py
-├── test_gemini_client.py
-├── test_queue_manager.py
-└── ...
-```
-
 ## Troubleshooting
 
 ### Common Issues
