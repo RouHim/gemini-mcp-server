@@ -1,73 +1,45 @@
 # Gemini MCP Server
 
 [![CI](https://github.com/RouHim/gemini-mcp-server/workflows/CI/badge.svg)](https://github.com/RouHim/gemini-mcp-server/actions)
-[![codecov](https://codecov.io/gh/RouHim/gemini-mcp-server/branch/main/graph/badge.svg)](https://codecov.io/gh/RouHim/gemini-mcp-server)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A Model Context Protocol (MCP) server for Gemini image generation, optimized for free tier usage with comprehensive production-ready features.
+A Model Context Protocol (MCP) server for Gemini image generation, optimized for free tier usage.
 
-## ✨ Features
+## Features
 
-- 🎨 **Advanced Image Generation**: Generate images from text prompts using Google's Gemini 2.0 Flash Experimental
-- 🚀 **Free Tier Optimized**: Built specifically for free tier rate limits (15 requests/minute) and quotas
-- ⚡ **Async Queue Management**: Intelligent request queuing with priority support and SQLite persistence
-- 🛡️ **Robust Error Handling**: Comprehensive retry logic, circuit breaker pattern, and structured error responses
-- 📊 **History Tracking**: Complete generation history with metadata, search, and export capabilities
-- 🔧 **Configurable Parameters**: Customize aspect ratios, styles, safety settings, and quality levels
-- 🗄️ **Optional Local Storage**: Save generated images locally with automatic cleanup policies
-- 📈 **Usage Statistics**: Track generation metrics, success rates, and storage usage
-- 🧪 **Production Ready**: 85%+ test coverage, type safety, and comprehensive CI/CD
+- 🎨 Image generation using Google's Gemini API
+- 🚀 Free tier optimized with rate limiting (15 requests/minute)
+- ⚡ Async queue management with SQLite persistence
+- 🛡️ Retry logic and error handling
+- 📊 Generation history tracking
+- 🗄️ Optional local image storage
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Python 3.10+** (tested on 3.10, 3.11, 3.12)
-- **Google AI API key** ([get one here](https://makersuite.google.com/app/apikey))
+- Python 3.10+
+- [Google AI API key](https://makersuite.google.com/app/apikey)
 
 ### Installation
 
 ```bash
-# Clone the repository
+# Clone and install
 git clone https://github.com/RouHim/gemini-mcp-server.git
 cd gemini-mcp-server
-
-# Create and activate virtual environment (recommended)
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
 pip install -e .
 
-# Copy environment template and configure your API key
+# Configure API key
 cp .env.example .env
-# Edit .env and add your GEMINI_API_KEY
-```
-
-### Configuration
-
-Copy `.env.example` to `.env` and configure:
-
-```bash
-# Required
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Optional storage configuration
-IMAGE_STORAGE_PATH=/path/to/store/images  # Enable local image storage
-MAX_STORAGE_MB=1000                       # Maximum storage size in MB
-MAX_AGE_DAYS=30                          # Maximum age of stored images
-MAX_IMAGE_COUNT=100                      # Maximum number of images to keep
+# Edit .env and add your GOOGLE_API_KEY
 ```
 
 ### Usage
 
 ```bash
-# Start the MCP server (recommended)
+# Start the server
 python -m gemini_mcp_server.server
-
-# Alternative entry point
-python main.py
 
 # Or use the installed command
 gemini-mcp-server
@@ -75,278 +47,106 @@ gemini-mcp-server
 
 ## MCP Tools
 
-### Core Generation
-
-#### `generate_image`
-Generate an image from a text prompt with advanced configuration options.
+### `generate_image`
+Generate images from text prompts.
 
 **Parameters:**
-- `prompt` (string, required): Text description of the image to generate
-- `aspect_ratio` (string, optional): Image aspect ratio
-  - `"1:1"` - Square (default)
-  - `"16:9"` - Wide landscape
-  - `"9:16"` - Tall portrait
-  - `"4:3"` - Standard landscape
-  - `"3:4"` - Standard portrait
-- `style` (string, optional): Artistic style
-  - `"realistic"` - Photorealistic images (default)
-  - `"photographic"` - Professional photography style
-  - `"artistic"` - Artistic rendering
-  - `"sketch"` - Pencil sketch style
-  - `"digital-art"` - Digital art style
-  - `"cartoon"` - Cartoon style
-- `safety_level` (string, optional): Content filtering level
-  - `"moderate"` - Balanced filtering (default)
-  - `"strict"` - Strict content filtering
-  - `"permissive"` - Minimal filtering
-- `quality` (string, optional): Image quality setting
-  - `"standard"` - Optimized for free tier (default)
-  - `"high"` - Higher quality, more tokens
-- `temperature` (number, optional): Creativity level (0.0-1.0, default: 0.7)
+- `prompt` (required): Text description
+- `aspect_ratio` (optional): "1:1", "16:9", "9:16", "4:3", "3:4"
+- `style` (optional): "realistic", "photographic", "artistic", "sketch", "digital-art", "cartoon"
+- `safety_level` (optional): "moderate", "strict", "permissive"
+- `quality` (optional): "standard", "high"
 
-**Example:**
-```json
-{
-  "prompt": "A serene mountain landscape at sunset",
-  "aspect_ratio": "16:9",
-  "style": "photographic",
-  "safety_level": "moderate",
-  "quality": "standard",
-  "temperature": 0.8
-}
-```
+### `get_queue_status`
+Check request queue status and rate limits.
 
-### Queue Management
-
-#### `get_queue_status`
-Get the current status of the request queue.
-
-**Returns:**
-- Queue size and processing status
-- Rate limit usage
-- Wait time estimates
-
-### History and Analytics
-
-#### `get_generation_history`
-Retrieve image generation history with filtering options.
+### `get_generation_history`
+Retrieve generation history with filtering.
 
 **Parameters:**
-- `limit` (number, optional): Maximum number of entries to return (1-100, default: 10)
-- `offset` (number, optional): Number of entries to skip (default: 0)
-- `success_only` (boolean, optional): Only return successful generations (default: false)
+- `limit` (optional): Max entries (1-100, default: 10)
+- `offset` (optional): Skip entries (default: 0)
+- `success_only` (optional): Only successful generations
 
-#### `search_generation_history`
-Search generation history by prompt text.
+### `get_generation_statistics`
+Get usage statistics and metrics.
 
-**Parameters:**
-- `search_term` (string, required): Text to search for in prompts
-- `limit` (number, optional): Maximum number of results (1-50, default: 10)
+### `cleanup_old_files`
+Clean up old stored images.
 
-#### `get_generation_statistics`
-Get comprehensive generation statistics and metrics.
+## Configuration
 
-**Returns:**
-- Total/successful/failed generation counts
-- Success rate and average generation time
-- Storage usage and model breakdown
-- Recent activity metrics
-
-#### `export_generation_history`
-Export generation history to JSON or CSV format.
-
-**Parameters:**
-- `format` (string, optional): Export format ("json" or "csv", default: "json")
-- `include_files` (boolean, optional): Include base64 encoded image data (default: false)
-
-### Storage Management
-
-#### `cleanup_old_files`
-Manually clean up old image files based on retention policies.
-
-**Parameters:**
-- `dry_run` (boolean, optional): Only report what would be deleted (default: true)
-
-**Returns:**
-- Number of files that would be/were deleted
-- Amount of storage space freed
-- Any errors encountered
-
-## Free Tier Optimization
-
-The server is specifically designed to work efficiently with Gemini's free tier:
-
-### Rate Limiting
-- **15 requests per minute** limit enforcement
-- Automatic queuing when limits are reached
-- Exponential backoff for rate limit errors
-
-### Request Management
-- **Async queue system** with priority support
-- **Circuit breaker pattern** for repeated failures
-- **Request persistence** across server restarts
-- **Intelligent retry logic** with exponential backoff
-
-### Error Handling
-- **Structured error responses** with user-friendly messages
-- **Comprehensive exception mapping** from Google API errors
-- **Graceful degradation** with placeholder images on failure
-- **Detailed logging** for debugging and monitoring
-
-## Architecture
-
-### Core Components
-
-1. **GeminiImageClient**: Handles communication with Gemini API
-2. **AsyncRequestQueue**: Manages request queuing and rate limiting
-3. **ImageHistoryManager**: Tracks generation history and metadata
-4. **RetryHandler**: Implements retry logic and error handling
-5. **ImageParameters**: Validates and processes generation parameters
-
-### Data Storage
-
-- **SQLite databases** for queue persistence and history tracking
-- **Optional local file storage** for generated images
-- **Automatic cleanup** based on configurable retention policies
-
-### Error Recovery
-
-- **Circuit breaker pattern** prevents cascading failures
-- **Exponential backoff** for transient errors
-- **Structured exception hierarchy** for precise error handling
-- **Fallback mechanisms** ensure service availability
-
-## 🛠️ Development
-
-### Setting Up Development Environment
+Environment variables (`.env` file):
 
 ```bash
-# Quick setup with Makefile (recommended)
-make dev-setup
+# Required
+GOOGLE_API_KEY=your_api_key_here
 
-# Manual setup
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Optional storage
+IMAGE_STORAGE_PATH=./images
+MAX_STORAGE_SIZE_MB=1000
+MAX_IMAGE_COUNT=100
+CLEANUP_AFTER_DAYS=30
+
+# Optional rate limiting
+MAX_REQUESTS_PER_MINUTE=15
+MAX_CONCURRENT_REQUESTS=3
+```
+
+## Development
+
+### Setup
+
+```bash
+# Install development dependencies
 pip install -e .[dev]
 
-# Verify installation
-python -c "import gemini_mcp_server; print('✓ Package installed successfully')"
-make validate
+# Or use Makefile
+make dev-setup
 ```
 
-### Development Commands
-
-The project includes a comprehensive Makefile for common development tasks:
+### Commands
 
 ```bash
-# Show all available commands
-make help
-
 # Quality checks
-make format          # Format code with Black
-make lint           # Lint with Ruff  
-make typecheck      # Type check with MyPy
-make quality        # Run all quality checks
+make format      # Black formatting
+make lint        # Ruff linting
+make typecheck   # MyPy type checking
 
 # Testing
-make test           # Run all tests
-make test-unit      # Run unit tests only
-make test-coverage  # Run tests with coverage report
+make test        # Run all tests
+make test-coverage  # Run with coverage
 
-# Development workflow
-make all            # Run quality checks + tests
-make ci             # Run full CI pipeline locally
-make serve          # Start development server
-```
-
-### Running Tests
-
-```bash
-# Run the full test suite
-pytest tests/ -v
-
-# Run with coverage reporting
-pytest --cov=src tests/ --cov-report=html --cov-report=term
-
-# Run specific test categories
-pytest tests/ -m unit          # Unit tests only
-pytest tests/ -m integration   # Integration tests only
-pytest tests/ -m smoke         # Critical functionality tests
-
-# Run a single test file
-pytest tests/test_server.py -v
-
-# Run with real API testing (requires GEMINI_API_KEY)
-pytest tests/test_integration.py -v
-```
-
-### Code Quality and Linting
-
-```bash
-# Format code with Black
-black src/ tests/
-
-# Lint with Ruff
-ruff check src/ tests/
-
-# Type checking with MyPy
-mypy src/
-
-# Run all quality checks
-black src/ tests/ && ruff check src/ tests/ && mypy src/
+# All checks
+make all         # Format + lint + typecheck + test
 ```
 
 ### Project Structure
 
 ```
-gemini-mcp-server/
-├── src/gemini_mcp_server/     # Main package
-│   ├── __init__.py
-│   ├── server.py              # MCP server implementation
-│   ├── gemini_client.py       # Google AI API client
-│   ├── queue_manager.py       # Async request queue
-│   ├── history_manager.py     # Generation history tracking
-│   ├── rate_limiter.py        # Rate limiting logic
-│   ├── retry_handler.py       # Retry and error handling
-│   ├── image_parameters.py    # Parameter validation
-│   └── exceptions.py          # Custom exceptions
-├── tests/                     # Test suite (85%+ coverage)
-│   ├── conftest.py           # Test fixtures and configuration
-│   ├── test_server.py        # Server tests
-│   ├── test_gemini_client.py # Client tests
-│   ├── test_queue_manager.py # Queue tests
-│   ├── test_history_manager.py # History tests
-│   ├── test_rate_limiter.py  # Rate limiter tests
-│   ├── test_retry_handler.py # Retry logic tests
-│   └── test_integration.py   # End-to-end tests
-├── .github/workflows/        # CI/CD pipelines
-├── main.py                   # Entry point
-├── pyproject.toml           # Project configuration
-└── README.md               # This file
+src/gemini_mcp_server/
+├── server.py              # MCP server
+├── gemini_client.py       # Google AI client
+├── queue_manager.py       # Request queue
+├── history_manager.py     # History tracking
+├── rate_limiter.py        # Rate limiting
+├── retry_handler.py       # Error handling
+├── image_parameters.py    # Parameter validation
+└── exceptions.py          # Custom exceptions
+
+tests/                     # Test suite
+├── test_server.py
+├── test_gemini_client.py
+├── test_queue_manager.py
+└── ...
 ```
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - see LICENSE file for details.
 
-## 🤝 Support & Community
+## Links
 
-- **Issues**: Report bugs and request features on [GitHub Issues](https://github.com/RouHim/gemini-mcp-server/issues)
-- **Discussions**: Join the conversation in [GitHub Discussions](https://github.com/RouHim/gemini-mcp-server/discussions)
-- **Security**: Report security issues via [GitHub Security Advisories](https://github.com/RouHim/gemini-mcp-server/security/advisories/new)
-
-## 🙏 Acknowledgments
-
-- **[Model Context Protocol (MCP)](https://github.com/modelcontextprotocol/python-sdk)** - Framework for AI tool integration
-- **[Google Gemini AI](https://deepmind.google/technologies/gemini/)** - Powerful image generation API
-- **Community contributors** - Thank you for improvements and feedback
-
----
-
-<div align="center">
-
-**Built with ❤️ for the MCP ecosystem**
-
-[Report Bug](https://github.com/RouHim/gemini-mcp-server/issues) · [Request Feature](https://github.com/RouHim/gemini-mcp-server/issues) · [Contribute](https://github.com/RouHim/gemini-mcp-server/blob/main/README.md#contributing)
-
-</div>
+- [Issues](https://github.com/RouHim/gemini-mcp-server/issues)
+- [Model Context Protocol](https://github.com/modelcontextprotocol/python-sdk)
+- [Google Gemini AI](https://deepmind.google/technologies/gemini/)
