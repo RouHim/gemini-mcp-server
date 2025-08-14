@@ -1,1 +1,28 @@
-{\n  \"$schema\": \"https://docs.renovatebot.com/renovate-schema.json\",\n  \"extends\": [\n    \"config:base\",\n    \":dependencyDashboard\",\n    \":semanticCommits\",\n    \":separatePatchReleases\"\n  ],\n  \"schedule\": [\n    \"before 6am on monday\"\n  ],\n  \"packageRules\": [\n    {\n      \"matchPackagePatterns\": [\"*\"],\n      \"rangeStrategy\": \"bump\"\n    },\n    {\n      \"matchDepTypes\": [\"devDependencies\"],\n      \"automerge\": true\n    }\n  ],\n  \"python\": {\n    \"ignoreDeps\": []\n  },\n  \"pip_requirements\": {\n    \"fileMatch\": [\"^requirements.*\\\\.txt$\"]\n  }\n}\n
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:base",
+    ":dependencyDashboard",
+    ":semanticCommits",
+    ":separatePatchReleases"
+  ],
+  "schedule": [
+    "before 6am on monday"
+  ],
+  "packageRules": [
+    {
+      "matchPackagePatterns": ["*"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "matchDepTypes": ["devDependencies"],
+      "automerge": true
+    }
+  ],
+  "python": {
+    "ignoreDeps": []
+  },
+  "pip_requirements": {
+    "fileMatch": ["^requirements.*\\.txt$"]
+  }
+}

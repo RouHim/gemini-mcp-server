@@ -1,1 +1,8 @@
-mcp>=1.0.0\ngoogle-generativeai>=0.3.0\naiohttp>=3.9.0\nasyncio-throttle>=1.0.2\npydantic>=2.5.0\npython-dotenv>=1.0.0\npillow>=10.1.0\ntenacity>=8.2.0\n
+mcp>=1.0.0
+google-generativeai>=0.3.0
+aiohttp>=3.9.0
+asyncio-throttle>=1.0.2
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+pillow>=10.1.0
+tenacity>=8.2.0

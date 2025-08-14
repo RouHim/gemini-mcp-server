@@ -1,1 +1,103 @@
-[build-system]\nrequires = [\"setuptools>=64\", \"wheel\"]\nbuild-backend = \"setuptools.build_meta\"\n\n[project]\nname = \"gemini-mcp-server\"\nversion = \"0.1.0\"\ndescription = \"MCP server for Gemini image generation optimized for free tier usage\"\nauthors = [{name = \"RouHim\", email = \"rouven@himmelstein.info\"}]\nreadme = \"README.md\"\nrequires-python = \">=3.10\"\nclassifiers = [\n    \"Development Status :: 3 - Alpha\",\n    \"Intended Audience :: Developers\",\n    \"License :: OSI Approved :: MIT License\",\n    \"Programming Language :: Python :: 3\",\n    \"Programming Language :: Python :: 3.10\",\n    \"Programming Language :: Python :: 3.11\",\n    \"Programming Language :: Python :: 3.12\",\n]\ndependencies = [\n    \"mcp>=1.0.0\",\n    \"google-generativeai>=0.3.0\",\n    \"aiohttp>=3.9.0\",\n    \"asyncio-throttle>=1.0.2\",\n    \"pydantic>=2.5.0\",\n    \"python-dotenv>=1.0.0\",\n    \"pillow>=10.1.0\",\n    \"tenacity>=8.2.0\",\n]\n\n[project.optional-dependencies]\ndev = [\n    \"pytest>=7.4.0\",\n    \"pytest-asyncio>=0.21.0\",\n    \"pytest-cov>=4.1.0\",\n    \"black>=23.11.0\",\n    \"mypy>=1.7.0\",\n    \"ruff>=0.1.6\",\n]\n\n[project.urls]\nHomepage = \"https://github.com/RouHim/gemini-mcp-server\"\n\"Bug Reports\" = \"https://github.com/RouHim/gemini-mcp-server/issues\"\n\"Source\" = \"https://github.com/RouHim/gemini-mcp-server\"\n\n[project.scripts]\ngemini-mcp-server = \"gemini_mcp_server.server:main\"\n\n[tool.setuptools.packages.find]\nwhere = [\"src\"]\n\n[tool.black]\nline-length = 88\ntarget-version = ['py310']\ninclude = '\\.pyi?$'\n\n[tool.ruff]\nselect = [\"E\", \"F\", \"W\", \"C90\", \"I\", \"N\", \"D\", \"UP\", \"YTT\", \"ANN\", \"S\", \"BLE\", \"FBT\", \"B\", \"A\", \"COM\", \"C4\", \"DTZ\", \"T10\", \"EM\", \"EXE\", \"ISC\", \"ICN\", \"G\", \"INP\", \"PIE\", \"T20\", \"PYI\", \"PT\", \"Q\", \"RSE\", \"RET\", \"SLF\", \"SIM\", \"TID\", \"TCH\", \"ARG\", \"PTH\", \"ERA\", \"PD\", \"PGH\", \"PL\", \"TRY\", \"NPY\", \"RUF\"]\nignore = [\"D100\", \"D101\", \"D102\", \"D103\", \"D104\", \"D105\", \"D106\", \"D107\"]\nline-length = 88\ntarget-version = \"py310\"\n\n[tool.mypy]\npython_version = \"3.10\"\nwarn_return_any = true\nwarn_unused_configs = true\ndisallow_untyped_defs = true\ndisallow_incomplete_defs = true\ncheck_untyped_defs = true\ndisallow_untyped_decorators = true\nno_implicit_optional = true\nwarn_redundant_casts = true\nwarn_unused_ignores = true\nwarn_no_return = true\nwarn_unreachable = true\nstrict_equality = true\n\n[tool.pytest.ini_options]\ntestpaths = [\"tests\"]\npython_files = [\"test_*.py\"]\npython_classes = [\"Test*\"]\npython_functions = [\"test_*\"]\naddopts = \"-v --tb=short\"\nasyncio_mode = \"auto\"\n\n[tool.coverage.run]\nsource = [\"src\"]\nomit = [\"tests/*\"]\n\n[tool.coverage.report]\nexclude_lines = [\n    \"pragma: no cover\",\n    \"def __repr__\",\n    \"if self.debug:\",\n    \"if settings.DEBUG\",\n    \"raise AssertionError\",\n    \"raise NotImplementedError\",\n    \"if 0:\",\n    \"if __name__ == .__main__.:\",\n    \"class .*\\\\bProtocol\\\\):\",\n    \"@(abc\\\\.)?abstractmethod\",\n]\n
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gemini-mcp-server"
+version = "0.1.0"
+description = "MCP server for Gemini image generation optimized for free tier usage"
+authors = [{name = "RouHim", email = "rouven@himmelstein.info"}]
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "mcp>=1.0.0",
+    "google-generativeai>=0.3.0",
+    "aiohttp>=3.9.0",
+    "asyncio-throttle>=1.0.2",
+    "pydantic>=2.5.0",
+    "python-dotenv>=1.0.0",
+    "pillow>=10.1.0",
+    "tenacity>=8.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.11.0",
+    "mypy>=1.7.0",
+    "ruff>=0.1.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/RouHim/gemini-mcp-server"
+"Bug Reports" = "https://github.com/RouHim/gemini-mcp-server/issues"
+"Source" = "https://github.com/RouHim/gemini-mcp-server"
+
+[project.scripts]
+gemini-mcp-server = "gemini_mcp_server.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.ruff]
+select = ["E", "F", "W", "C90", "I", "N", "D", "UP", "YTT", "ANN", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "NPY", "RUF"]
+ignore = ["D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107"]
+line-length = 88
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
