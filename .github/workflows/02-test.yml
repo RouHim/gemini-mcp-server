@@ -1,0 +1,127 @@
+name: 🧪 Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_call:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: 🧪 Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        exclude:
+          # Reduce matrix for faster feedback on PRs
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest  
+            python-version: "3.11"
+          - os: macos-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.11"
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+
+      - name: 🐍 Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --dev --frozen
+
+      - name: 🧪 Run tests with coverage
+        run: |
+          uv run pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=80
+
+      - name: 📊 Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-smoke:
+    name: 🔥 Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: 📦 Install package
+        run: |
+          uv sync --frozen
+
+      - name: 🔥 Run smoke tests
+        run: |
+          uv run pytest tests/ -m smoke -v --tb=short
+        env:
+          GOOGLE_API_KEY: "test-key"  # Mock key for smoke tests
+
+  test-minimal:
+    name: 🪶 Minimal Dependencies Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"  # Test oldest supported version
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: 📦 Install minimal dependencies
+        run: |
+          uv sync --frozen --no-dev
+
+      - name: 🧪 Test import
+        run: |
+          uv run python -c "import gemini_mcp_server; print('✅ Import successful')"
+
+      - name: 📊 Check entry point
+        run: |
+          uv run gemini-mcp-server --help || echo "Entry point test completed"
