@@ -33,3 +33,13 @@
 - **Jobs**: validate → test → build → deploy (main only)
 - **Matrix**: Python 3.10-3.13, Ubuntu/Windows/macOS
 - **Security**: Dependency scan, secret detection
+
+## Available MCP Servers
+
+- **searxng**: Web search via SearXNG (`searxng_search`, `searxng_scrape_article`)
+- **fetch**: URL content extraction (`fetch_fetch`) - HTML to markdown
+- **context7**: Library docs (`context7_resolve_library_id`, `context7_get_library_docs`)
+- **puppeteer**: Browser automation (`puppeteer_navigate`, `puppeteer_screenshot`, `puppeteer_click`, `puppeteer_fill`, `puppeteer_evaluate`)
+- **github**: Repository management (`github_*` for repos, PRs, issues, files) - needs `GITHUB_PERSONAL_ACCESS_TOKEN`
+- **movibe-memory-bank**: Project memory/progress (`initialize_memory_bank`, `track_progress`, `switch_mode`)
+- **memory**: Knowledge graphs (`memory_create_entities`, `memory_create_relations`, `memory_search_nodes`)
