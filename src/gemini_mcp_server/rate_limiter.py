@@ -15,7 +15,7 @@ class RateLimiter:
         """
         self.max_calls = max_calls
         self.time_window = time_window
-        self.calls = []
+        self.calls: list[float] = []
         self._lock = asyncio.Lock()
 
     async def acquire(self) -> bool:
