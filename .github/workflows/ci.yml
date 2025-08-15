@@ -42,7 +42,7 @@ jobs:
           cache-dependency-glob: "pyproject.toml"
 
       - name: 📦 Install dependencies
-        run: uv sync --all-extras --frozen
+        run: uv sync --extra dev
 
       - name: 🔍 Lint with Ruff
         run: uv run ruff check src/ tests/ --output-format=github
@@ -99,7 +99,7 @@ jobs:
           enable-cache: true
 
       - name: 📦 Install dependencies
-        run: uv sync --all-extras --frozen
+        run: uv sync --extra dev
 
       - name: 🔒 Run Safety check
         run: uv run safety check --json --output safety-report.json || true
@@ -167,7 +167,7 @@ jobs:
           cache-dependency-glob: "pyproject.toml"
 
       - name: 📦 Install dependencies
-        run: uv sync --all-extras --frozen
+        run: uv sync --extra dev
 
       - name: 🧪 Run tests with coverage
         run: uv run pytest tests/ -v --cov=src --cov-report=xml --cov-fail-under=80
@@ -203,7 +203,7 @@ jobs:
           enable-cache: true
 
       - name: 📦 Install build dependencies
-        run: uv sync --frozen
+        run: uv sync
 
       - name: 🏗️ Build package
         run: uv build --wheel --sdist
@@ -252,7 +252,7 @@ jobs:
           enable-cache: true
 
       - name: 📦 Install dependencies
-        run: uv sync --all-extras --frozen
+        run: uv sync --extra dev
 
       - name: 🔧 Configure Git
         run: |
