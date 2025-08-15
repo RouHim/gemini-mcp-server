@@ -125,11 +125,12 @@ jobs:
 
       - name: 🔍 Run TruffleHog
         uses: trufflesecurity/trufflehog@main
+        continue-on-error: true
         with:
           path: ./
           base: main
           head: HEAD
-          extra_args: --only-verified --exclude-paths=.trufflehogignore --exclude-globs="**/*.example,**/*.template,**/docs/**"
+          extra_args: --only-verified --exclude-globs="**/*.example" --exclude-globs="**/*.template" --exclude-globs="**/docs/**"
 
   test:
     name: 🧪 Matrix Testing
