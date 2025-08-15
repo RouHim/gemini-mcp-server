@@ -1,4 +1,4 @@
-name: 🚀 CI/CD Pipeline
+name: 🚀 Ultra-Minimal CI/CD Pipeline
 
 on:
   push:
@@ -18,54 +18,11 @@ permissions:
 
 jobs:
   # ============================================================================
-  # VALIDATION STAGE
+  # ULTRA-MINIMAL PIPELINE: 5 Core Jobs + Deploy (Main Only)
   # ============================================================================
+  
   validate:
-    name: 🔍 Code Quality & Validation
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: ⚡ Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-          cache-dependency-glob: "pyproject.toml"
-
-      - name: 📦 Install dependencies
-        run: |
-          uv sync --dev --frozen
-
-      - name: 🔍 Lint with Ruff
-        run: |
-          uv run ruff check src/ tests/ --output-format=github
-
-      - name: 🎨 Check formatting with Ruff
-        run: |
-          uv run ruff format --check src/ tests/
-
-      - name: 🔧 Type check with mypy
-        run: |
-          uv run mypy src/ --install-types --non-interactive
-
-      - name: ✅ Pre-commit hooks
-        uses: pre-commit/action@v3.0.1
-        if: github.event_name == 'pull_request'
-        env:
-          SKIP: no-commit-to-branch
-
-  validate-pyproject:
-    name: 📝 Validate pyproject.toml
+    name: 🔍 Code Quality (ruff, mypy, pre-commit)
     runs-on: ubuntu-latest
     timeout-minutes: 5
     
@@ -80,23 +37,102 @@ jobs:
 
       - name: ⚡ Setup uv
         uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+          cache-dependency-glob: "pyproject.toml"
+
+      - name: 📦 Install dependencies
+        run: uv sync --dev --frozen
+
+      - name: 🔍 Lint with Ruff
+        run: uv run ruff check src/ tests/ --output-format=github
+
+      - name: 🎨 Check formatting with Ruff
+        run: uv run ruff format --check src/ tests/
+
+      - name: 🔧 Type check with mypy
+        run: uv run mypy src/ --install-types --non-interactive
+
+      - name: ✅ Pre-commit hooks
+        uses: pre-commit/action@v3.0.1
+        if: github.event_name == 'pull_request'
+        env:
+          SKIP: no-commit-to-branch
+
+  validate-pyproject:
+    name: 📝 Configuration Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
 
       - name: 🔍 Validate pyproject.toml
-        run: |
-          uv run python -c "import tomllib; tomllib.load(open('pyproject.toml', 'rb'))"
+        run: uv run python -c "import tomllib; tomllib.load(open('pyproject.toml', 'rb'))"
 
-      - name: 📦 Check package build
-        run: |
-          uv build --no-sources
-          ls -la dist/
+  dependency-scan:
+    name: 🔐 Security Vulnerability Scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
 
-  # ============================================================================
-  # TESTING STAGE
-  # ============================================================================
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: 📦 Install dependencies
+        run: uv sync --dev --frozen
+
+      - name: 🔒 Run Safety check
+        run: uv run safety check --json --output safety-report.json || true
+
+      - name: 🔍 Dependency Review (PRs only)
+        if: github.event_name == 'pull_request'
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
+
+  secrets-scan:
+    name: 🔑 Secret Detection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: 🔍 Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: main
+          head: HEAD
+          extra_args: --only-verified
+
   test:
-    name: 🧪 Test Python ${{ matrix.python-version }} on ${{ matrix.os }}
+    name: 🧪 Matrix Testing
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: [validate, validate-pyproject]
     
     strategy:
@@ -104,13 +140,8 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
-        include:
-          # Add minimal dependency test for oldest supported Python
-          - os: ubuntu-latest
-            python-version: "3.10"
-            minimal-deps: true
         exclude:
-          # Reduce matrix for faster feedback on PRs
+          # Reduced matrix for speed
           - os: windows-latest
             python-version: "3.10"
           - os: windows-latest  
@@ -135,122 +166,31 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "pyproject.toml"
 
-      - name: 📦 Install dependencies (minimal)
-        if: matrix.minimal-deps == true
-        run: |
-          uv sync --frozen --no-dev
+      - name: 📦 Install dependencies
+        run: uv sync --dev --frozen
 
-      - name: 📦 Install dependencies (full)
-        if: matrix.minimal-deps != true
-        run: |
-          uv sync --dev --frozen
+      - name: 🧪 Run tests with coverage
+        run: uv run pytest tests/ -v --cov=src --cov-report=xml --cov-fail-under=80
 
-      - name: 🧪 Test import (minimal deps)
-        if: matrix.minimal-deps == true
-        run: |
-          uv run python -c "import gemini_mcp_server; print('✅ Import successful')"
-          uv run gemini-mcp-server --help || echo "Entry point test completed"
-
-      - name: 🧪 Run tests with coverage (full deps)
-        if: matrix.minimal-deps != true
-        run: |
-          uv run pytest tests/ -v --cov=src --cov-report=xml --cov-report=term-missing --cov-fail-under=80
-
-      - name: 📊 Upload coverage to Codecov
-        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13' && matrix.minimal-deps != true
+      - name: 📊 Upload coverage (Ubuntu Python 3.13 only)
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.13'
         uses: codecov/codecov-action@v5
         with:
           file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  # ============================================================================
-  # SECURITY STAGE
-  # ============================================================================
-  dependency-scan:
-    name: 🔐 Dependency Security Scan
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [validate, validate-pyproject]
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v5
-
-      - name: 🐍 Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: ⚡ Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          enable-cache: true
-
-      - name: 📦 Install dependencies
-        run: |
-          uv sync --dev --frozen
-
-      - name: 🔒 Run Safety check
-        run: |
-          uv run safety check --json --output safety-report.json || true
-          if [ -f safety-report.json ]; then
-            echo "::group::Safety Report"
-            cat safety-report.json
-            echo "::endgroup::"
-          fi
-
-      - name: 📊 Upload Safety results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: safety-report
-          path: safety-report.json
-          retention-days: 30
-
-      - name: 🔍 Dependency Review
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: moderate
-          allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
-
-  secrets-scan:
-    name: 🔑 Secrets Detection
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    needs: [validate, validate-pyproject]
-    
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # Full history for comprehensive scan
-
-      - name: 🔍 Run TruffleHog
-        uses: trufflesecurity/trufflehog@main
-        with:
-          path: ./
-          base: main
-          head: HEAD
-          extra_args: --debug --only-verified
-
-  # ============================================================================
-  # BUILD STAGE
-  # ============================================================================
   build:
-    name: 📦 Build Package
+    name: 📦 Package Building + Verification
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: [test, dependency-scan, secrets-scan]
     
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@v5
         with:
-          fetch-depth: 0  # Full history for proper version detection
+          fetch-depth: 0
 
       - name: 🐍 Setup Python
         uses: actions/setup-python@v5
@@ -263,22 +203,10 @@ jobs:
           enable-cache: true
 
       - name: 📦 Install build dependencies
-        run: |
-          uv sync --frozen
+        run: uv sync --frozen
 
       - name: 🏗️ Build package
-        run: |
-          uv build --wheel --sdist
-
-      - name: 📋 List built artifacts
-        run: |
-          echo "## Built Artifacts" >> $GITHUB_STEP_SUMMARY
-          echo "| Artifact | Size |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|------|" >> $GITHUB_STEP_SUMMARY
-          for file in dist/*; do
-            size=$(du -h "$file" | cut -f1)
-            echo "| $(basename "$file") | $size |" >> $GITHUB_STEP_SUMMARY
-          done
+        run: uv build --wheel --sdist
 
       - name: 🔍 Verify package integrity
         run: |
@@ -297,9 +225,9 @@ jobs:
   # DEPLOY STAGE (Main branch only)
   # ============================================================================
   deploy:
-    name: 🚀 Semantic Release & Deploy
+    name: 🚀 Semantic Release & PyPI Deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     environment:
@@ -324,8 +252,7 @@ jobs:
           enable-cache: true
 
       - name: 📦 Install dependencies
-        run: |
-          uv sync --dev --frozen
+        run: uv sync --dev --frozen
 
       - name: 🔧 Configure Git
         run: |
@@ -335,8 +262,7 @@ jobs:
       - name: 🚀 Run Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          uv run semantic-release version --print
+        run: uv run semantic-release version --print
 
       - name: 📊 Check if new version was created
         id: check-version
@@ -351,31 +277,7 @@ jobs:
 
       - name: 🏗️ Build package for release
         if: steps.check-version.outputs.new-version == 'true'
-        run: |
-          uv build --wheel --sdist
-
-      - name: 📋 Generate release notes
-        if: steps.check-version.outputs.new-version == 'true'
-        run: |
-          echo "## 📦 Release Assets" >> release-notes.md
-          echo "" >> release-notes.md
-          echo "| Asset | Size | SHA256 |" >> release-notes.md
-          echo "|-------|------|--------|" >> release-notes.md
-          for file in dist/*; do
-            if [[ -f "$file" ]]; then
-              name=$(basename "$file")
-              size=$(du -h "$file" | cut -f1)
-              sha256=$(sha256sum "$file" | cut -d' ' -f1)
-              echo "| $name | $size | \`${sha256:0:16}...\` |" >> release-notes.md
-            fi
-          done
-
-      - name: 📤 Upload release assets
-        if: steps.check-version.outputs.new-version == 'true'
-        uses: python-semantic-release/publish-action@v9.14.0
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          directory: dist
+        run: uv build --wheel --sdist
 
       - name: 🔐 Publish to PyPI
         if: steps.check-version.outputs.new-version == 'true'
