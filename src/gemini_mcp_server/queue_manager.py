@@ -88,7 +88,7 @@ class AsyncRequestQueue:
         self._worker_task: asyncio.Task | None = None
         self._shutdown_event = asyncio.Event()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Initialize SQLite database for queue persistence."""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -117,7 +117,7 @@ class AsyncRequestQueue:
         except Exception as e:
             logger.exception(f"Failed to initialize queue database: {e}")
 
-    def _save_request_to_db(self, request: QueuedRequest):
+    def _save_request_to_db(self, request: QueuedRequest) -> None:
         """Save request to database."""
         if not self.persist_to_db:
             return
@@ -152,7 +152,7 @@ class AsyncRequestQueue:
         except Exception as e:
             logger.exception(f"Failed to save request to database: {e}")
 
-    def _load_pending_requests(self):
+    def _load_pending_requests(self) -> None:
         """Load pending requests from database on startup."""
         if not self.persist_to_db:
             return
@@ -225,11 +225,11 @@ class AsyncRequestQueue:
 
     async def enqueue(
         self,
-        function: Callable,
-        *args,
+        function: Callable[..., Any],
+        *args: Any,
         priority: RequestPriority = RequestPriority.NORMAL,
         max_retries: int = 3,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Enqueue a function call for execution.
@@ -351,7 +351,9 @@ class AsyncRequestQueue:
             "wait_time_seconds": wait_time,
         }
 
-    async def _process_request(self, request: QueuedRequest, function: Callable):
+    async def _process_request(
+        self, request: QueuedRequest, function: Callable[..., Any]
+    ) -> None:
         """Process a single request."""
         async with self._semaphore:
             request.status = RequestStatus.PROCESSING
@@ -405,7 +407,7 @@ class AsyncRequestQueue:
 
                 self._save_request_to_db(request)
 
-    async def _worker(self):
+    async def _worker(self) -> None:
         """Background worker to process queued requests."""
         logger.info("Queue worker started")
 
@@ -439,7 +441,7 @@ class AsyncRequestQueue:
             except Exception as e:
                 logger.exception(f"Error in queue worker: {e}")
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the queue worker."""
         if self._worker_task is not None:
             return
@@ -451,7 +453,7 @@ class AsyncRequestQueue:
         self._worker_task = asyncio.create_task(self._worker())
         logger.info("Queue started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the queue worker."""
         if self._worker_task is None:
             return

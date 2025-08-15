@@ -72,7 +72,7 @@ class ImageGenerationParameters(BaseModel):
 
     @field_validator("prompt")
     @classmethod
-    def validate_prompt(cls, v):
+    def validate_prompt(cls, v: str) -> str:
         """Validate prompt content."""
         if not v.strip():
             raise ValueError("Prompt cannot be empty or only whitespace")

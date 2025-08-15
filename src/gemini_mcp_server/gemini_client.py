@@ -24,7 +24,7 @@ class GeminiImageClient:
             api_key: Google Gemini API key
         """
         self.api_key = api_key
-        self.model = None
+        self.model: genai.GenerativeModel | None = None
 
     async def initialize(self) -> None:
         """Initialize the Gemini model."""
@@ -43,7 +43,7 @@ class GeminiImageClient:
 
     @circuit_breaker_check
     @retry_on_failure(max_attempts=3, base_delay=1.0, max_delay=60.0)
-    async def generate_image(self, prompt: str, **kwargs) -> dict[str, Any]:
+    async def generate_image(self, prompt: str, **kwargs: Any) -> dict[str, Any]:
         """
         Generate an image from a text prompt using Gemini 2.0 Flash experimental.
 
@@ -187,6 +187,8 @@ class GeminiImageClient:
             if not self.model:
                 await self.initialize()
 
+            # Type assertion since we know model is initialized after the check above
+            assert self.model is not None
             # Make a simple test request
             response = self.model.generate_content("Hello")
             return response is not None

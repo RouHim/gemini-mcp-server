@@ -3,7 +3,7 @@
 import asyncio
 import logging
 import os
-from typing import Any
+from typing import Any, cast
 
 from dotenv import load_dotenv
 from mcp.server import Server
@@ -75,7 +75,10 @@ async def handle_call_tool(
     if name == "generate_image":
         return await handle_generate_image(arguments)
     elif name == "get_queue_status":
-        return await handle_get_queue_status()
+        return cast(
+            "list[TextContent | ImageContent | EmbeddedResource]",
+            await handle_get_queue_status(),
+        )
     else:
         raise ValueError(f"Unknown tool: {name}")
 
@@ -133,9 +136,12 @@ async def handle_generate_image(
         return [TextContent(type="text", text=f"Error: {error_response['message']}")]
 
 
-async def _generate_image(request: ImageGenerationParameters) -> dict:
+async def _generate_image(request: ImageGenerationParameters) -> dict[Any, Any]:
     """Generate image."""
     try:
+        # Ensure client is initialized
+        assert gemini_client is not None, "Gemini client not initialized"
+
         # Generate the image
         result = await gemini_client.generate_image(
             prompt=request.get_enhanced_prompt(),
@@ -169,7 +175,7 @@ async def handle_get_queue_status() -> list[TextContent]:
         return [TextContent(type="text", text=f"Error getting queue status: {e!s}")]
 
 
-async def main():
+async def main() -> None:
     """Main server function."""
     global gemini_client
 

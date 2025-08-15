@@ -70,3 +70,10 @@ class CircuitBreakerOpenError(GeminiMCPError):
         self, message: str = "Circuit breaker is open, service temporarily unavailable"
     ):
         super().__init__(message, "CIRCUIT_BREAKER_OPEN")
+
+
+class CircuitBreakerError(GeminiMCPError):
+    """Base class for circuit breaker related errors."""
+
+    def __init__(self, message: str):
+        super().__init__(message, "CIRCUIT_BREAKER_ERROR")

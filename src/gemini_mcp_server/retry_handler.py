@@ -3,8 +3,9 @@
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, TypeVar
 
 from google.api_core import exceptions as google_exceptions
 from tenacity import (
@@ -27,6 +28,8 @@ from .exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class CircuitBreaker:
@@ -62,12 +65,12 @@ class CircuitBreaker:
         # HALF_OPEN state
         return True
 
-    def on_success(self):
+    def on_success(self) -> None:
         """Called when operation succeeds."""
         self.failure_count = 0
         self.state = "CLOSED"
 
-    def on_failure(self, exception: Exception):
+    def on_failure(self, exception: Exception) -> None:
         """Called when operation fails."""
         if isinstance(exception, self.expected_exception):
             self.failure_count += 1
@@ -114,7 +117,7 @@ def map_google_exception(exception: Exception) -> Exception:
         return exception
 
 
-def circuit_breaker_check(func):
+def circuit_breaker_check(func: Callable[..., Any]) -> Any:
     """Decorator to check circuit breaker before function execution."""
 
     @wraps(func)
@@ -139,10 +142,10 @@ def retry_on_failure(
     base_delay: float = 1.0,
     max_delay: float = 60.0,
     exponential_base: int = 2,
-):
+) -> Any:
     """Decorator for retrying failed operations with exponential backoff."""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @retry(
             stop=stop_after_attempt(max_attempts),
             wait=wait_exponential(
@@ -158,12 +161,14 @@ def retry_on_failure(
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
             try:
                 return await func(*args, **kwargs)
             except RetryError as e:
                 # If all retries failed, raise the last exception
-                raise e.last_attempt.exception()
+                if e.last_attempt and e.last_attempt.exception():
+                    raise e.last_attempt.exception()  # type: ignore[misc]
+                raise  # type: ignore[misc]
 
         return wrapper
 
