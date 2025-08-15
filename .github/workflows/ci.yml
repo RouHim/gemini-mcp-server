@@ -1,5 +1,6 @@
 name: 🚀 Ultra-Minimal CI/CD Pipeline
 
+# Force trigger for GitHub Actions processing
 on:
   push:
     branches: [ main, develop, feature/modern-ci-cd-pipeline ]
