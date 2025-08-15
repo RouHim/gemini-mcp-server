@@ -3,33 +3,28 @@
 import asyncio
 import logging
 import os
-import base64
-from typing import Any, Sequence
+from typing import Any
 
-import google.generativeai as genai
+from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import (
-    CallToolRequest,
-    ListToolsRequest,
-    Tool,
-    TextContent,
-    ImageContent,
     EmbeddedResource,
+    ImageContent,
+    TextContent,
+    Tool,
 )
-from pydantic import BaseModel, Field
-from dotenv import load_dotenv
+from pydantic import BaseModel
 
+from .exceptions import ValidationError
 from .gemini_client import GeminiImageClient
-from .rate_limiter import RateLimiter
 from .image_parameters import ImageGenerationParameters
-from .queue_manager import get_request_queue, RequestPriority
+from .queue_manager import RequestPriority, get_request_queue
+from .rate_limiter import RateLimiter
 from .retry_handler import (
-    get_user_friendly_error_message,
     create_structured_error_response,
 )
-from .exceptions import ValidationError
 
 # Load environment variables
 load_dotenv()
@@ -150,7 +145,7 @@ async def _generate_image(request: ImageGenerationParameters) -> dict:
 
         return result
 
-    except Exception as e:
+    except Exception:
         raise
 
 
@@ -171,7 +166,7 @@ async def handle_get_queue_status() -> list[TextContent]:
             )
         ]
     except Exception as e:
-        return [TextContent(type="text", text=f"Error getting queue status: {str(e)}")]
+        return [TextContent(type="text", text=f"Error getting queue status: {e!s}")]
 
 
 async def main():

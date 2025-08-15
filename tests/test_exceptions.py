@@ -1,16 +1,15 @@
 """Tests for exceptions module."""
 
-import pytest
 from src.gemini_mcp_server.exceptions import (
-    GeminiMCPError,
-    RateLimitError,
-    QuotaExceededError,
-    ContentPolicyError,
     AuthenticationError,
-    NetworkError,
-    ValidationError,
-    ModelError,
     CircuitBreakerOpenError,
+    ContentPolicyError,
+    GeminiMCPError,
+    ModelError,
+    NetworkError,
+    QuotaExceededError,
+    RateLimitError,
+    ValidationError,
 )
 
 

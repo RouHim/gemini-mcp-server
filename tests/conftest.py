@@ -4,7 +4,7 @@ import asyncio
 import os
 import tempfile
 from datetime import datetime
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 try:
@@ -24,10 +24,10 @@ from src.gemini_mcp_server.exceptions import (
 )
 from src.gemini_mcp_server.gemini_client import GeminiImageClient
 from src.gemini_mcp_server.image_parameters import (
-    ImageGenerationParameters,
     AspectRatio,
-    ImageStyle,
+    ImageGenerationParameters,
     ImageQuality,
+    ImageStyle,
     SafetyLevel,
 )
 from src.gemini_mcp_server.rate_limiter import RateLimiter
@@ -46,7 +46,7 @@ def sample_image_params() -> ImageGenerationParameters:
     )
 
 
-def sample_generation_record() -> Dict[str, Any]:
+def sample_generation_record() -> dict[str, Any]:
     """Create sample generation record."""
     return {
         "id": "test-123",

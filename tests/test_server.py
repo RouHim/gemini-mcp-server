@@ -1,15 +1,14 @@
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-import sys
 import os
-import json
+import sys
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from gemini_mcp_server.server import server, handle_list_tools, handle_call_tool
 from gemini_mcp_server.exceptions import ValidationError
+from gemini_mcp_server.server import handle_call_tool, handle_list_tools, server
 
 
 class TestMCPServer:

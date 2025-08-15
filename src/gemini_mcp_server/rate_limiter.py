@@ -1,6 +1,5 @@
 import asyncio
 import time
-from typing import Optional
 
 
 class RateLimiter:
@@ -43,7 +42,7 @@ class RateLimiter:
 
             return False
 
-    async def wait_time(self) -> Optional[float]:
+    async def wait_time(self) -> float | None:
         """
         Get the time to wait before next call is allowed.
 

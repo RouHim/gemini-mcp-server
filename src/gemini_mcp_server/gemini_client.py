@@ -1,14 +1,14 @@
 import base64
 import io
 import logging
-from typing import Dict, Any, Optional
+from typing import Any
 
 import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold, GenerationConfig
+from google.generativeai.types import GenerationConfig, HarmBlockThreshold, HarmCategory
 from PIL import Image
 
-from .exceptions import ValidationError, ModelError, AuthenticationError
-from .retry_handler import circuit_breaker_check, retry_on_failure, map_google_exception
+from .exceptions import ValidationError
+from .retry_handler import circuit_breaker_check, map_google_exception, retry_on_failure
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class GeminiImageClient:
 
     @circuit_breaker_check
     @retry_on_failure(max_attempts=3, base_delay=1.0, max_delay=60.0)
-    async def generate_image(self, prompt: str, **kwargs) -> Dict[str, Any]:
+    async def generate_image(self, prompt: str, **kwargs) -> dict[str, Any]:
         """
         Generate an image from a text prompt using Gemini 2.0 Flash experimental.
 
@@ -132,7 +132,7 @@ class GeminiImageClient:
                 "error": str(mapped_exception),
             }
 
-    async def _generate_image_placeholder(self, prompt: str) -> Dict[str, Any]:
+    async def _generate_image_placeholder(self, prompt: str) -> dict[str, Any]:
         """
         Placeholder implementation for image generation.
 
@@ -160,7 +160,7 @@ class GeminiImageClient:
 
     def _get_safety_settings(
         self, safety_level: str = "moderate"
-    ) -> Dict[HarmCategory, HarmBlockThreshold]:
+    ) -> dict[HarmCategory, HarmBlockThreshold]:
         """Get safety settings for content generation."""
         if safety_level == "strict":
             threshold = HarmBlockThreshold.BLOCK_LOW_AND_ABOVE

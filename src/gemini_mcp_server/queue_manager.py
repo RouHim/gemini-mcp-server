@@ -1,15 +1,15 @@
 """Async queue system for managing concurrent requests with rate limiting."""
 
 import asyncio
+import json
 import logging
+import sqlite3
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, List
-import json
-import sqlite3
-from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ class QueuedRequest:
     priority: RequestPriority
     status: RequestStatus
     created_at: float
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    started_at: float | None = None
+    completed_at: float | None = None
+    result: Any | None = None
+    error: str | None = None
     retry_count: int = 0
     max_retries: int = 3
 
@@ -60,7 +60,7 @@ class AsyncRequestQueue:
         max_queue_size: int = 100,
         rate_limit_per_minute: int = 15,
         persist_to_db: bool = True,
-        db_path: Optional[str] = None,
+        db_path: str | None = None,
     ):
         self.max_concurrent = max_concurrent
         self.max_queue_size = max_queue_size
@@ -71,12 +71,12 @@ class AsyncRequestQueue:
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue(
             maxsize=max_queue_size
         )
-        self._processing: Dict[str, QueuedRequest] = {}
-        self._completed: Dict[str, QueuedRequest] = {}
+        self._processing: dict[str, QueuedRequest] = {}
+        self._completed: dict[str, QueuedRequest] = {}
         self._semaphore = asyncio.Semaphore(max_concurrent)
 
         # Rate limiting
-        self._request_times: List[float] = []
+        self._request_times: list[float] = []
         self._rate_lock = asyncio.Lock()
 
         # Database persistence
@@ -85,7 +85,7 @@ class AsyncRequestQueue:
             self._init_db()
 
         # Background task
-        self._worker_task: Optional[asyncio.Task] = None
+        self._worker_task: asyncio.Task | None = None
         self._shutdown_event = asyncio.Event()
 
     def _init_db(self):
@@ -272,7 +272,7 @@ class AsyncRequestQueue:
 
         return request_id
 
-    async def get_status(self, request_id: str) -> Optional[QueuedRequest]:
+    async def get_status(self, request_id: str) -> QueuedRequest | None:
         """Get the status of a request."""
         # Check processing requests
         if request_id in self._processing:
@@ -335,7 +335,7 @@ class AsyncRequestQueue:
         logger.info(f"Cancelled request {request_id}")
         return True
 
-    async def get_queue_stats(self) -> Dict[str, Any]:
+    async def get_queue_stats(self) -> dict[str, Any]:
         """Get queue statistics."""
         queue_size = self._queue.qsize()
         processing_count = len(self._processing)
@@ -462,7 +462,7 @@ class AsyncRequestQueue:
         logger.info("Queue stopped")
 
     async def wait_for_completion(
-        self, request_id: str, timeout: Optional[float] = None
+        self, request_id: str, timeout: float | None = None
     ) -> QueuedRequest:
         """
         Wait for a request to complete.
@@ -501,7 +501,7 @@ class AsyncRequestQueue:
 
 
 # Global queue instance
-request_queue: Optional[AsyncRequestQueue] = None
+request_queue: AsyncRequestQueue | None = None
 
 
 def get_request_queue() -> AsyncRequestQueue:

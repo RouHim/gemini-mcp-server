@@ -3,28 +3,27 @@
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Optional, Dict
 from functools import wraps
+from typing import Any
 
+from google.api_core import exceptions as google_exceptions
 from tenacity import (
+    RetryError,
+    before_sleep_log,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
-    RetryError,
 )
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
 
 from .exceptions import (
-    RateLimitError,
-    QuotaExceededError,
-    ContentPolicyError,
     AuthenticationError,
-    NetworkError,
-    ModelError,
     CircuitBreakerOpenError,
+    ContentPolicyError,
+    ModelError,
+    NetworkError,
+    QuotaExceededError,
+    RateLimitError,
 )
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ class CircuitBreaker:
         self.timeout = timeout
         self.expected_exception = expected_exception
         self.failure_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
 
     def can_proceed(self) -> bool:
@@ -95,9 +94,9 @@ def map_google_exception(exception: Exception) -> Exception:
         return QuotaExceededError(str(exception))
     elif isinstance(exception, google_exceptions.TooManyRequests):
         return RateLimitError(str(exception))
-    elif isinstance(exception, google_exceptions.Unauthenticated):
-        return AuthenticationError(str(exception))
-    elif isinstance(exception, google_exceptions.PermissionDenied):
+    elif isinstance(exception, google_exceptions.Unauthenticated) or isinstance(
+        exception, google_exceptions.PermissionDenied
+    ):
         return AuthenticationError(str(exception))
     elif isinstance(exception, google_exceptions.InvalidArgument):
         if "content policy" in str(exception).lower():
@@ -209,13 +208,13 @@ def get_user_friendly_error_message(exception: Exception) -> str:
         return "Service temporarily unavailable due to repeated failures. Please try again later."
 
     elif isinstance(exception, ModelError):
-        return f"Model error: {str(exception)}"
+        return f"Model error: {exception!s}"
 
     else:
-        return f"An unexpected error occurred: {str(exception)}"
+        return f"An unexpected error occurred: {exception!s}"
 
 
-def create_structured_error_response(exception: Exception) -> Dict[str, Any]:
+def create_structured_error_response(exception: Exception) -> dict[str, Any]:
     """Create a structured error response for MCP clients."""
     return {
         "error": True,

@@ -1,7 +1,8 @@
 """Image generation parameter definitions and validation."""
 
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -77,7 +78,7 @@ class ImageGenerationParameters(BaseModel):
             raise ValueError("Prompt cannot be empty or only whitespace")
         return v.strip()
 
-    def to_generation_config(self) -> Dict[str, Any]:
+    def to_generation_config(self) -> dict[str, Any]:
         """Convert parameters to Gemini generation config."""
         # Map quality to specific parameters
         if self.quality == ImageQuality.HIGH:

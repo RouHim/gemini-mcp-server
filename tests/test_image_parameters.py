@@ -2,11 +2,11 @@
 
 import pytest
 from src.gemini_mcp_server.image_parameters import (
-    ImageGenerationParameters,
     AspectRatio,
+    ImageGenerationParameters,
+    ImageQuality,
     ImageStyle,
     SafetyLevel,
-    ImageQuality,
 )
 
 
