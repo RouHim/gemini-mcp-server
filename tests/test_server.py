@@ -20,18 +20,13 @@ class TestMCPServer:
         """Test that list_tools returns all expected tools."""
         tools = await handle_list_tools()
 
-        # Should have 7 tools now
-        assert len(tools) == 7
+        # Should have 2 tools currently
+        assert len(tools) == 2
 
         tool_names = [tool.name for tool in tools]
         expected_tools = [
             "generate_image",
             "get_queue_status",
-            "search_generation_history",
-            "get_generation_statistics",
-            "export_generation_history",
-            "cleanup_old_generations",
-            "get_generation_details",
         ]
 
         for expected_tool in expected_tools:
@@ -63,8 +58,22 @@ class TestMCPServer:
     @pytest.mark.asyncio
     async def test_generate_image_tool(self):
         """Test generate_image tool with valid arguments."""
-        with patch("gemini_mcp_server.server.queue_manager") as mock_queue:
-            mock_queue.add_generation_request = AsyncMock(return_value="request-123")
+        with patch("gemini_mcp_server.server.get_request_queue") as mock_get_queue:
+            mock_queue = AsyncMock()
+            mock_queue.enqueue = AsyncMock(return_value="request-123")
+            mock_queue._worker_task = None
+            mock_queue.start = AsyncMock()
+            
+            # Mock the completed request
+            mock_completed_request = MagicMock()
+            mock_completed_request.status.value = "completed"
+            mock_completed_request.result = {
+                "data": b"fake_image_data",
+                "mime_type": "image/png"
+            }
+            mock_queue.wait_for_completion = AsyncMock(return_value=mock_completed_request)
+            
+            mock_get_queue.return_value = mock_queue
 
             result = await handle_call_tool(
                 "generate_image",
@@ -75,25 +84,29 @@ class TestMCPServer:
                 },
             )
 
-            assert result["request_id"] == "request-123"
-            assert result["status"] == "queued"
-            mock_queue.add_generation_request.assert_called_once()
+            assert len(result) == 2  # TextContent and ImageContent
+            mock_queue.enqueue.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_queue_status_tool(self):
         """Test get_queue_status tool."""
-        with patch("gemini_mcp_server.server.queue_manager") as mock_queue:
-            mock_queue.get_status.return_value = {
+        with patch("gemini_mcp_server.server.get_request_queue") as mock_get_queue:
+            mock_queue = AsyncMock()
+            mock_queue.get_queue_stats = AsyncMock(return_value={
                 "queue_size": 5,
-                "processing": 1,
-                "completed_today": 10,
-            }
+                "processing_count": 1,
+                "max_concurrent": 3,
+                "requests_last_minute": 8,
+                "rate_limit_per_minute": 15,
+                "wait_time_seconds": 0.0,
+            })
+            mock_get_queue.return_value = mock_queue
 
             result = await handle_call_tool("get_queue_status", {})
 
-            assert result["queue_size"] == 5
-            assert result["processing"] == 1
-            assert result["completed_today"] == 10
+            assert len(result) == 1
+            assert "Queue size: 5" in result[0].text
+            assert "Processing: 1/3" in result[0].text
 
     def test_server_initialization(self):
         """Test that server object is properly configured."""

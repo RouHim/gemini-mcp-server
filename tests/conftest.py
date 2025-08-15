@@ -132,8 +132,8 @@ def rate_limiter():
 async def gemini_client():
     """Create Gemini client for testing."""
     with mock_genai():
-        client = GeminiImageClient()
-        await client.initialize("fake-api-key")
+        client = GeminiImageClient("fake-api-key")
+        await client.initialize()
         return client
 
 

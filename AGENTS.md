@@ -1,8 +1,9 @@
 # Agent Guidelines for Gemini MCP Server
 
-## General behaviour
+## General stuff
 - If unsure about a decision, search online for best practices
 - If unsure about a library usage, use context7 to lookup library documentation
+- The Github Repository is available at: https://github.com/RouHim/gemini-mcp-server
 
 ## Build/Test Commands
 ### Direct Commands

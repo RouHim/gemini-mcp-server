@@ -121,7 +121,7 @@ async def handle_generate_image(
                 TextContent(
                     type="text",
                     text=f"Successfully generated image from prompt: '{request.prompt}'\n"
-                    f"Parameters: {request.dict()}",
+                    f"Parameters: {request.model_dump()}",
                 ),
                 ImageContent(
                     type="image", data=result["data"], mimeType=result["mime_type"]
