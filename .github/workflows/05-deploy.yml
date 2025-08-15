@@ -1,0 +1,157 @@
+name: 🚀 Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["🔍 Validate", "🧪 Test", "🛡️ Security", "📦 Build"]
+    types: [completed]
+    branches: [ main ]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel deployment
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write  # OIDC for PyPI publishing
+
+jobs:
+  deploy:
+    name: 🚀 Semantic Release & Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: pypi
+      url: https://pypi.org/p/gemini-mcp-server
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ⚡ Setup uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: 📦 Install dependencies
+        run: |
+          uv sync --dev --frozen
+
+      - name: 🔧 Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: 🚀 Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          uv run semantic-release version --print
+
+      - name: 📊 Check if new version was created
+        id: check-version
+        run: |
+          if git diff HEAD~1 --name-only | grep -q "pyproject.toml"; then
+            echo "new-version=true" >> $GITHUB_OUTPUT
+            echo "New version detected!"
+          else
+            echo "new-version=false" >> $GITHUB_OUTPUT
+            echo "No new version created"
+          fi
+
+      - name: 🏗️ Build package for release
+        if: steps.check-version.outputs.new-version == 'true'
+        run: |
+          uv build --wheel --sdist
+
+      - name: 📋 Generate release notes
+        if: steps.check-version.outputs.new-version == 'true'
+        run: |
+          echo "## 📦 Release Assets" >> release-notes.md
+          echo "" >> release-notes.md
+          echo "| Asset | Size | SHA256 |" >> release-notes.md
+          echo "|-------|------|--------|") >> release-notes.md
+          for file in dist/*; do
+            if [[ -f "$file" ]]; then
+              name=$(basename "$file")
+              size=$(du -h "$file" | cut -f1)
+              sha256=$(sha256sum "$file" | cut -d' ' -f1)
+              echo "| $name | $size | \`${sha256:0:16}...\` |" >> release-notes.md
+            fi
+          done
+
+      - name: 📤 Upload release assets
+        if: steps.check-version.outputs.new-version == 'true'
+        uses: python-semantic-release/publish-action@v9.14.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          directory: dist
+
+      - name: 🔐 Publish to PyPI
+        if: steps.check-version.outputs.new-version == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          print-hash: true
+          attestations: true
+
+  notify:
+    name: 📢 Post-Deploy Notifications
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: 📊 Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+            echo "📦 Check the [PyPI page](https://pypi.org/p/gemini-mcp-server) for the latest release." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Deployment failed. Check the logs for details." >> $GITHUB_STEP_SUMMARY
+          fi
+
+  validate-release:
+    name: ✅ Validate Release
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: needs.deploy.result == 'success'
+    
+    steps:
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: ⏱️ Wait for PyPI propagation
+        run: |
+          echo "Waiting 60 seconds for PyPI propagation..."
+          sleep 60
+
+      - name: 🧪 Test installation from PyPI
+        run: |
+          pip install --upgrade pip
+          pip install gemini-mcp-server
+          python -c "import gemini_mcp_server; print(f'✅ Successfully installed version: {gemini_mcp_server.__version__}')"
+
+      - name: 📋 Verify entry point
+        run: |
+          gemini-mcp-server --help || echo "Entry point verified"

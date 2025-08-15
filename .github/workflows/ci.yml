@@ -1,4 +1,4 @@
-name: CI
+name: 🚀 CI/CD Pipeline
 
 on:
   push:
@@ -6,93 +6,63 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  validate:
+    name: 🔍 Validate
+    uses: ./.github/workflows/01-validate.yml
+
   test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+    name: 🧪 Test
+    uses: ./.github/workflows/02-test.yml
 
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-    
-    - name: Lint with ruff
-      run: ruff check src/ tests/
-    
-    - name: Format check with black
-      run: black --check src/ tests/
-    
-    - name: Type check with mypy
-      run: mypy src/
-    
-    - name: Test with pytest
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY || 'test-key-for-mocking' }}
-      run: |
-        pytest tests/ -v \
-          --cov=src \
-          --cov-report=xml \
-          --cov-report=term \
-          --cov-report=html \
-          --cov-fail-under=80 \
-          -m "not integration or integration"
-    
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        fail_ci_if_error: false
-        verbose: true
-        
-    - name: Upload coverage to artifacts
-      uses: actions/upload-artifact@v3
-      if: matrix.python-version == '3.11'
-      with:
-        name: coverage-report
-        path: htmlcov/
+  security:
+    name: 🛡️ Security
+    uses: ./.github/workflows/03-security.yml
 
-  integration-test:
+  build:
+    name: 📦 Build
+    needs: [validate, test]
+    uses: ./.github/workflows/04-build.yml
+
+  deploy:
+    name: 🚀 Deploy
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [validate, test, security, build]
+    uses: ./.github/workflows/05-deploy.yml
+    secrets: inherit
+
+  status:
+    name: 📊 Pipeline Status
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: test
+    if: always()
+    needs: [validate, test, security, build, deploy]
     
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.11"
-    
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .[dev]
-    
-    - name: Run integration tests
-      env:
-        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-      run: |
-        if [ -n "$GEMINI_API_KEY" ]; then
-          pytest tests/test_integration.py -v -m integration
-        else
-          echo "Skipping integration tests - no API key provided"
-        fi
+      - name: 📊 Create Pipeline Summary
+        run: |
+          echo "## 🚀 CI/CD Pipeline Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Status | Duration |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 Validate | ${{ needs.validate.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🧪 Test | ${{ needs.test.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🛡️ Security | ${{ needs.security.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Build | ${{ needs.build.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🚀 Deploy | ${{ needs.deploy.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Overall status
+          if [[ "${{ needs.validate.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.security.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
+            echo "✅ **Pipeline Status: SUCCESS**" >> $GITHUB_STEP_SUMMARY
+            if [[ "${{ github.ref }}" == "refs/heads/main" && "${{ needs.deploy.result }}" == "success" ]]; then
+              echo "🚀 Successfully deployed to production!" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "❌ **Pipeline Status: FAILED**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the failed stages and fix the issues." >> $GITHUB_STEP_SUMMARY
+          fi
