@@ -17,10 +17,7 @@ permissions:
   id-token: write  # OIDC for PyPI publishing
 
 jobs:
-  # ============================================================================
-  # ULTRA-MINIMAL PIPELINE: 5 Core Jobs + Deploy (Main Only)
-  # ============================================================================
-  
+
   validate:
     name: 🔍 Code Quality (ruff, mypy, pre-commit)
     runs-on: ubuntu-latest
