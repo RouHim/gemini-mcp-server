@@ -9,10 +9,10 @@ description = "MCP server for Gemini image generation optimized for free tier us
 authors = [{name = "RouHim", email = "rouven@himmelstein.info"}]
 readme = "README.md"
 requires-python = ">=3.10"
+license = "MIT"
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers", 
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -89,6 +89,16 @@ ignore = [
     "TRY300",   # try-except in loop
     "PLR2004",  # magic value comparison
     "SIM108",   # if-else-block can be replaced with ternary
+    "PLR0911",  # too many return statements
+    "PLW0603",  # global statement discouraged
+    "B904",     # raise without from
+    "G004",     # logging f-string
+    "TRY401",   # redundant exception in logging.exception
+    "E501",     # line too long
+    "TRY203",   # raise in except clause
+    "SIM115",   # use context manager for files
+    "PTH118",   # use pathlib instead of os.path.join
+    "PTH120",   # use pathlib instead of os.path.dirname
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -99,7 +109,7 @@ ignore = [
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
-line-ending = "auto"
+line-ending = "lf"
 
 [tool.mypy]
 python_version = "3.10"

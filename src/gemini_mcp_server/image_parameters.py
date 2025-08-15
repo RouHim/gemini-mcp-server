@@ -1,7 +1,8 @@
 """Image generation parameter definitions and validation."""
 
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any, ClassVar
+
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -71,13 +72,13 @@ class ImageGenerationParameters(BaseModel):
 
     @field_validator("prompt")
     @classmethod
-    def validate_prompt(cls, v):
+    def validate_prompt(cls, v: str) -> str:
         """Validate prompt content."""
         if not v.strip():
             raise ValueError("Prompt cannot be empty or only whitespace")
         return v.strip()
 
-    def to_generation_config(self) -> Dict[str, Any]:
+    def to_generation_config(self) -> dict[str, Any]:
         """Convert parameters to Gemini generation config."""
         # Map quality to specific parameters
         if self.quality == ImageQuality.HIGH:
@@ -115,11 +116,14 @@ class ImageGenerationParameters(BaseModel):
             AspectRatio.PORTRAIT_3_4: "portrait format",
         }
 
-        enhanced_prompt = f"Generate a {style_prompts[self.style]} in {aspect_ratio_prompts[self.aspect_ratio]}: {self.prompt}"
+        enhanced_prompt = (
+            f"Generate a {style_prompts[self.style]} in "
+            f"{aspect_ratio_prompts[self.aspect_ratio]}: {self.prompt}"
+        )
         return enhanced_prompt
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "prompt": "A beautiful sunset over mountains",
                 "aspect_ratio": "16:9",

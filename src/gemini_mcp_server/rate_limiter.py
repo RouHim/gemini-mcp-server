@@ -1,6 +1,5 @@
 import asyncio
 import time
-from typing import Optional
 
 
 class RateLimiter:
@@ -16,7 +15,7 @@ class RateLimiter:
         """
         self.max_calls = max_calls
         self.time_window = time_window
-        self.calls = []
+        self.calls: list[float] = []
         self._lock = asyncio.Lock()
 
     async def acquire(self) -> bool:
@@ -43,7 +42,7 @@ class RateLimiter:
 
             return False
 
-    async def wait_time(self) -> Optional[float]:
+    async def wait_time(self) -> float | None:
         """
         Get the time to wait before next call is allowed.
 

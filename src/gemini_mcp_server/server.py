@@ -3,33 +3,28 @@
 import asyncio
 import logging
 import os
-import base64
-from typing import Any, Sequence
+from typing import Any, cast
 
-import google.generativeai as genai
+from dotenv import load_dotenv
 from mcp.server import Server
 from mcp.server.models import InitializationOptions
 from mcp.server.stdio import stdio_server
 from mcp.types import (
-    CallToolRequest,
-    ListToolsRequest,
-    Tool,
-    TextContent,
-    ImageContent,
     EmbeddedResource,
+    ImageContent,
+    TextContent,
+    Tool,
 )
-from pydantic import BaseModel, Field
-from dotenv import load_dotenv
+from pydantic import BaseModel
 
+from .exceptions import ValidationError
 from .gemini_client import GeminiImageClient
-from .rate_limiter import RateLimiter
 from .image_parameters import ImageGenerationParameters
-from .queue_manager import get_request_queue, RequestPriority
+from .queue_manager import RequestPriority, get_request_queue
+from .rate_limiter import RateLimiter
 from .retry_handler import (
-    get_user_friendly_error_message,
     create_structured_error_response,
 )
-from .exceptions import ValidationError
 
 # Load environment variables
 load_dotenv()
@@ -54,7 +49,7 @@ class QueueStatusRequest(BaseModel):
     pass
 
 
-@server.list_tools()
+@server.list_tools()  # type: ignore[misc]
 async def handle_list_tools() -> list[Tool]:
     """List available tools."""
     return [
@@ -71,7 +66,7 @@ async def handle_list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()
+@server.call_tool()  # type: ignore[misc]
 async def handle_call_tool(
     name: str, arguments: dict[str, Any] | None
 ) -> list[TextContent | ImageContent | EmbeddedResource]:
@@ -80,7 +75,10 @@ async def handle_call_tool(
     if name == "generate_image":
         return await handle_generate_image(arguments)
     elif name == "get_queue_status":
-        return await handle_get_queue_status()
+        return cast(
+            "list[TextContent | ImageContent | EmbeddedResource]",
+            await handle_get_queue_status(),
+        )
     else:
         raise ValueError(f"Unknown tool: {name}")
 
@@ -138,20 +136,17 @@ async def handle_generate_image(
         return [TextContent(type="text", text=f"Error: {error_response['message']}")]
 
 
-async def _generate_image(request: ImageGenerationParameters) -> dict:
+async def _generate_image(request: ImageGenerationParameters) -> dict[Any, Any]:
     """Generate image."""
-    try:
-        # Generate the image
-        result = await gemini_client.generate_image(
-            prompt=request.get_enhanced_prompt(),
-            **request.to_generation_config(),
-            safety_level=request.safety_level.value,
-        )
+    # Ensure client is initialized
+    assert gemini_client is not None, "Gemini client not initialized"
 
-        return result
-
-    except Exception as e:
-        raise
+    # Generate the image
+    return await gemini_client.generate_image(  # type: ignore[unreachable]
+        prompt=request.get_enhanced_prompt(),
+        **request.to_generation_config(),
+        safety_level=request.safety_level.value,
+    )
 
 
 async def handle_get_queue_status() -> list[TextContent]:
@@ -171,10 +166,10 @@ async def handle_get_queue_status() -> list[TextContent]:
             )
         ]
     except Exception as e:
-        return [TextContent(type="text", text=f"Error getting queue status: {str(e)}")]
+        return [TextContent(type="text", text=f"Error getting queue status: {e!s}")]
 
 
-async def main():
+async def main() -> None:
     """Main server function."""
     global gemini_client
 
@@ -190,7 +185,7 @@ async def main():
         await gemini_client.initialize()
         logger.info("Gemini client initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize Gemini client: {e}")
+        logger.exception(f"Failed to initialize Gemini client: {e}")
         raise
 
     # Initialize the request queue
@@ -208,8 +203,8 @@ async def main():
                     server_name="gemini-mcp-server",
                     server_version="0.2.0",
                     capabilities=server.get_capabilities(
-                        notification_options=None,
-                        experimental_capabilities=None,
+                        notification_options=None,  # type: ignore[arg-type]
+                        experimental_capabilities=None,  # type: ignore[arg-type]
                     ),
                 ),
             )

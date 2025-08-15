@@ -1,12 +1,10 @@
 """Custom exceptions for the Gemini MCP server."""
 
-from typing import Optional
-
 
 class GeminiMCPError(Exception):
     """Base exception for all Gemini MCP server errors."""
 
-    def __init__(self, message: str, error_code: Optional[str] = None):
+    def __init__(self, message: str, error_code: str | None = None):
         super().__init__(message)
         self.message = message
         self.error_code = error_code
@@ -16,7 +14,7 @@ class RateLimitError(GeminiMCPError):
     """Raised when API rate limits are exceeded."""
 
     def __init__(
-        self, message: str = "Rate limit exceeded", retry_after: Optional[float] = None
+        self, message: str = "Rate limit exceeded", retry_after: float | None = None
     ):
         super().__init__(message, "RATE_LIMIT_EXCEEDED")
         self.retry_after = retry_after
@@ -32,7 +30,7 @@ class QuotaExceededError(GeminiMCPError):
 class ContentPolicyError(GeminiMCPError):
     """Raised when content violates API policies."""
 
-    def __init__(self, message: str, policy_type: Optional[str] = None):
+    def __init__(self, message: str, policy_type: str | None = None):
         super().__init__(message, "CONTENT_POLICY_VIOLATION")
         self.policy_type = policy_type
 
@@ -72,3 +70,10 @@ class CircuitBreakerOpenError(GeminiMCPError):
         self, message: str = "Circuit breaker is open, service temporarily unavailable"
     ):
         super().__init__(message, "CIRCUIT_BREAKER_OPEN")
+
+
+class CircuitBreakerError(GeminiMCPError):
+    """Base class for circuit breaker related errors."""
+
+    def __init__(self, message: str):
+        super().__init__(message, "CIRCUIT_BREAKER_ERROR")

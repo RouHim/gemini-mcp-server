@@ -1,14 +1,14 @@
-import pytest
-import asyncio
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-import sys
 import os
+import sys
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from gemini_mcp_server.gemini_client import GeminiImageClient
 from gemini_mcp_server.exceptions import ValidationError
+from gemini_mcp_server.gemini_client import GeminiImageClient
 from gemini_mcp_server.image_parameters import ImageGenerationParameters
 
 
@@ -47,7 +47,7 @@ class TestGeminiImageClient:
             # Mock the model to raise an exception, forcing placeholder
             mock_model.generate_content = AsyncMock(side_effect=Exception("API Error"))
 
-            params = ImageGenerationParameters(prompt="test prompt")
+            ImageGenerationParameters(prompt="test prompt")
             result = await client.generate_image("test prompt")
 
             assert result["prompt"] == "test prompt"
@@ -85,10 +85,10 @@ class TestGeminiImageClient:
             mock_inline_data = MagicMock()
             mock_inline_data.data = b"fake_image_data"
             mock_inline_data.mime_type = "image/png"
-            
+
             mock_part = MagicMock()
             mock_part.inline_data = mock_inline_data
-            
+
             mock_response = MagicMock()
             mock_response.parts = [mock_part]
 
@@ -99,7 +99,7 @@ class TestGeminiImageClient:
             client = GeminiImageClient("fake-api-key")
             await client.initialize()
 
-            params = ImageGenerationParameters(prompt="test prompt")
+            ImageGenerationParameters(prompt="test prompt")
             result = await client.generate_image("test prompt")
 
             assert result["prompt"] == "test prompt"
@@ -107,5 +107,3 @@ class TestGeminiImageClient:
             assert "data" in result
             assert result["mime_type"] == "image/png"
             assert "error" not in result
-
-

@@ -4,17 +4,17 @@ Project validation script for Gemini MCP Server.
 Checks project setup, dependencies, and basic functionality.
 """
 
-import sys
-import subprocess
-from pathlib import Path
 import importlib.util
+import subprocess
+import sys
+from pathlib import Path
 
 
 def run_command(cmd: str, description: str) -> bool:
     """Run a command and return success status."""
     print(f"✓ {description}...")
     try:
-        result = subprocess.run(cmd.split(), capture_output=True, text=True, check=True)
+        subprocess.run(cmd.split(), capture_output=True, text=True, check=True)
         return True
     except subprocess.CalledProcessError as e:
         print(f"  ✗ Failed: {e.stderr.strip()}")
@@ -60,7 +60,7 @@ def main():
         ("src/gemini_mcp_server/server.py", "MCP server"),
         ("tests/conftest.py", "Test configuration"),
         (".github/workflows/ci.yml", "CI pipeline"),
-        (".env.example", "Environment template"),
+        ("config/.env.example", "Environment template"),
     ]
 
     print("📁 Checking file structure...")
@@ -70,7 +70,7 @@ def main():
             checks_passed += 1
 
     # Import checks
-    print(f"\n📦 Checking imports...")
+    print("\n📦 Checking imports...")
     modules_to_check = [
         ("gemini_mcp_server", "Main package"),
         ("gemini_mcp_server.server", "MCP server"),
@@ -84,7 +84,7 @@ def main():
             checks_passed += 1
 
     # Command checks
-    print(f"\n🔧 Checking development tools...")
+    print("\n🔧 Checking development tools...")
     commands_to_check = [
         ("python --version", "Python installation"),
         ("pip --version", "Pip package manager"),
@@ -100,7 +100,7 @@ def main():
             checks_passed += 1
 
     # Summary
-    print(f"\n📊 Validation Summary:")
+    print("\n📊 Validation Summary:")
     print(f"   Passed: {checks_passed}/{total_checks} checks")
 
     if checks_passed == total_checks:

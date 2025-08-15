@@ -1,15 +1,15 @@
 """Async queue system for managing concurrent requests with rate limiting."""
 
 import asyncio
+import json
 import logging
+import sqlite3
 import time
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, List
-import json
-import sqlite3
-from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -43,10 +43,10 @@ class QueuedRequest:
     priority: RequestPriority
     status: RequestStatus
     created_at: float
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
-    result: Optional[Any] = None
-    error: Optional[str] = None
+    started_at: float | None = None
+    completed_at: float | None = None
+    result: Any | None = None
+    error: str | None = None
     retry_count: int = 0
     max_retries: int = 3
 
@@ -60,7 +60,7 @@ class AsyncRequestQueue:
         max_queue_size: int = 100,
         rate_limit_per_minute: int = 15,
         persist_to_db: bool = True,
-        db_path: Optional[str] = None,
+        db_path: str | None = None,
     ):
         self.max_concurrent = max_concurrent
         self.max_queue_size = max_queue_size
@@ -71,12 +71,12 @@ class AsyncRequestQueue:
         self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue(
             maxsize=max_queue_size
         )
-        self._processing: Dict[str, QueuedRequest] = {}
-        self._completed: Dict[str, QueuedRequest] = {}
+        self._processing: dict[str, QueuedRequest] = {}
+        self._completed: dict[str, QueuedRequest] = {}
         self._semaphore = asyncio.Semaphore(max_concurrent)
 
         # Rate limiting
-        self._request_times: List[float] = []
+        self._request_times: list[float] = []
         self._rate_lock = asyncio.Lock()
 
         # Database persistence
@@ -85,10 +85,10 @@ class AsyncRequestQueue:
             self._init_db()
 
         # Background task
-        self._worker_task: Optional[asyncio.Task] = None
+        self._worker_task: asyncio.Task | None = None
         self._shutdown_event = asyncio.Event()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Initialize SQLite database for queue persistence."""
         try:
             conn = sqlite3.connect(self.db_path)
@@ -115,9 +115,9 @@ class AsyncRequestQueue:
             conn.close()
             logger.info(f"Queue database initialized at {self.db_path}")
         except Exception as e:
-            logger.error(f"Failed to initialize queue database: {e}")
+            logger.exception(f"Failed to initialize queue database: {e}")
 
-    def _save_request_to_db(self, request: QueuedRequest):
+    def _save_request_to_db(self, request: QueuedRequest) -> None:
         """Save request to database."""
         if not self.persist_to_db:
             return
@@ -126,8 +126,8 @@ class AsyncRequestQueue:
             conn = sqlite3.connect(self.db_path)
             conn.execute(
                 """
-                INSERT OR REPLACE INTO queued_requests 
-                (id, function_name, args, kwargs, priority, status, created_at, 
+                INSERT OR REPLACE INTO queued_requests
+                (id, function_name, args, kwargs, priority, status, created_at,
                  started_at, completed_at, result, error, retry_count, max_retries)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -150,9 +150,9 @@ class AsyncRequestQueue:
             conn.commit()
             conn.close()
         except Exception as e:
-            logger.error(f"Failed to save request to database: {e}")
+            logger.exception(f"Failed to save request to database: {e}")
 
-    def _load_pending_requests(self):
+    def _load_pending_requests(self) -> None:
         """Load pending requests from database on startup."""
         if not self.persist_to_db:
             return
@@ -161,7 +161,7 @@ class AsyncRequestQueue:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.execute(
                 """
-                SELECT * FROM queued_requests 
+                SELECT * FROM queued_requests
                 WHERE status IN ('pending', 'processing')
                 ORDER BY created_at
             """
@@ -190,7 +190,7 @@ class AsyncRequestQueue:
             conn.close()
             logger.info("Loaded pending requests from database")
         except Exception as e:
-            logger.error(f"Failed to load pending requests: {e}")
+            logger.exception(f"Failed to load pending requests: {e}")
 
     def _get_priority_value(self, priority: RequestPriority) -> int:
         """Convert priority enum to numeric value for queue ordering."""
@@ -225,11 +225,11 @@ class AsyncRequestQueue:
 
     async def enqueue(
         self,
-        function: Callable,
-        *args,
+        function: Callable[..., Any],
+        *args: Any,
         priority: RequestPriority = RequestPriority.NORMAL,
         max_retries: int = 3,
-        **kwargs,
+        **kwargs: Any,
     ) -> str:
         """
         Enqueue a function call for execution.
@@ -272,7 +272,7 @@ class AsyncRequestQueue:
 
         return request_id
 
-    async def get_status(self, request_id: str) -> Optional[QueuedRequest]:
+    async def get_status(self, request_id: str) -> QueuedRequest | None:
         """Get the status of a request."""
         # Check processing requests
         if request_id in self._processing:
@@ -309,7 +309,7 @@ class AsyncRequestQueue:
                         max_retries=row[12],
                     )
             except Exception as e:
-                logger.error(f"Failed to get request status from database: {e}")
+                logger.exception(f"Failed to get request status from database: {e}")
 
         return None
 
@@ -330,12 +330,12 @@ class AsyncRequestQueue:
                 conn.commit()
                 conn.close()
             except Exception as e:
-                logger.error(f"Failed to cancel request in database: {e}")
+                logger.exception(f"Failed to cancel request in database: {e}")
 
         logger.info(f"Cancelled request {request_id}")
         return True
 
-    async def get_queue_stats(self) -> Dict[str, Any]:
+    async def get_queue_stats(self) -> dict[str, Any]:
         """Get queue statistics."""
         queue_size = self._queue.qsize()
         processing_count = len(self._processing)
@@ -351,7 +351,9 @@ class AsyncRequestQueue:
             "wait_time_seconds": wait_time,
         }
 
-    async def _process_request(self, request: QueuedRequest, function: Callable):
+    async def _process_request(
+        self, request: QueuedRequest, function: Callable[..., Any]
+    ) -> None:
         """Process a single request."""
         async with self._semaphore:
             request.status = RequestStatus.PROCESSING
@@ -388,7 +390,7 @@ class AsyncRequestQueue:
                     priority_value = self._get_priority_value(request.priority)
                     await self._queue.put((priority_value, time.time(), request))
                 else:
-                    logger.error(
+                    logger.exception(
                         f"Request {request.id} failed permanently after {request.retry_count} attempts: {e}"
                     )
                     request.status = RequestStatus.FAILED
@@ -405,7 +407,7 @@ class AsyncRequestQueue:
 
                 self._save_request_to_db(request)
 
-    async def _worker(self):
+    async def _worker(self) -> None:
         """Background worker to process queued requests."""
         logger.info("Queue worker started")
 
@@ -437,9 +439,9 @@ class AsyncRequestQueue:
                 await self._process_request(request, function)
 
             except Exception as e:
-                logger.error(f"Error in queue worker: {e}")
+                logger.exception(f"Error in queue worker: {e}")
 
-    async def start(self):
+    async def start(self) -> None:
         """Start the queue worker."""
         if self._worker_task is not None:
             return
@@ -451,7 +453,7 @@ class AsyncRequestQueue:
         self._worker_task = asyncio.create_task(self._worker())
         logger.info("Queue started")
 
-    async def stop(self):
+    async def stop(self) -> None:
         """Stop the queue worker."""
         if self._worker_task is None:
             return
@@ -462,7 +464,7 @@ class AsyncRequestQueue:
         logger.info("Queue stopped")
 
     async def wait_for_completion(
-        self, request_id: str, timeout: Optional[float] = None
+        self, request_id: str, timeout: float | None = None
     ) -> QueuedRequest:
         """
         Wait for a request to complete.
@@ -501,7 +503,7 @@ class AsyncRequestQueue:
 
 
 # Global queue instance
-request_queue: Optional[AsyncRequestQueue] = None
+request_queue: AsyncRequestQueue | None = None
 
 
 def get_request_queue() -> AsyncRequestQueue:

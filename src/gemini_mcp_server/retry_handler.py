@@ -3,31 +3,33 @@
 import asyncio
 import logging
 import time
-from typing import Any, Callable, Optional, Dict
+from collections.abc import Callable
 from functools import wraps
+from typing import Any, TypeVar
 
+from google.api_core import exceptions as google_exceptions
 from tenacity import (
+    RetryError,
+    before_sleep_log,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
-    RetryError,
 )
-import google.generativeai as genai
-from google.api_core import exceptions as google_exceptions
 
 from .exceptions import (
-    RateLimitError,
-    QuotaExceededError,
-    ContentPolicyError,
     AuthenticationError,
-    NetworkError,
-    ModelError,
     CircuitBreakerOpenError,
+    ContentPolicyError,
+    ModelError,
+    NetworkError,
+    QuotaExceededError,
+    RateLimitError,
 )
 
 logger = logging.getLogger(__name__)
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class CircuitBreaker:
@@ -43,7 +45,7 @@ class CircuitBreaker:
         self.timeout = timeout
         self.expected_exception = expected_exception
         self.failure_count = 0
-        self.last_failure_time: Optional[float] = None
+        self.last_failure_time: float | None = None
         self.state = "CLOSED"  # CLOSED, OPEN, HALF_OPEN
 
     def can_proceed(self) -> bool:
@@ -63,12 +65,12 @@ class CircuitBreaker:
         # HALF_OPEN state
         return True
 
-    def on_success(self):
+    def on_success(self) -> None:
         """Called when operation succeeds."""
         self.failure_count = 0
         self.state = "CLOSED"
 
-    def on_failure(self, exception: Exception):
+    def on_failure(self, exception: Exception) -> None:
         """Called when operation fails."""
         if isinstance(exception, self.expected_exception):
             self.failure_count += 1
@@ -83,7 +85,9 @@ class CircuitBreaker:
 
 # Global circuit breaker for Gemini API calls
 gemini_circuit_breaker = CircuitBreaker(
-    failure_threshold=3, timeout=300.0, expected_exception=Exception  # 5 minutes
+    failure_threshold=3,
+    timeout=300.0,
+    expected_exception=Exception,  # 5 minutes
 )
 
 
@@ -93,9 +97,10 @@ def map_google_exception(exception: Exception) -> Exception:
         return QuotaExceededError(str(exception))
     elif isinstance(exception, google_exceptions.TooManyRequests):
         return RateLimitError(str(exception))
-    elif isinstance(exception, google_exceptions.Unauthenticated):
-        return AuthenticationError(str(exception))
-    elif isinstance(exception, google_exceptions.PermissionDenied):
+    elif isinstance(
+        exception,
+        google_exceptions.Unauthenticated | google_exceptions.PermissionDenied,
+    ):
         return AuthenticationError(str(exception))
     elif isinstance(exception, google_exceptions.InvalidArgument):
         if "content policy" in str(exception).lower():
@@ -103,7 +108,7 @@ def map_google_exception(exception: Exception) -> Exception:
         return ModelError(str(exception))
     elif isinstance(
         exception,
-        (google_exceptions.DeadlineExceeded, google_exceptions.ServiceUnavailable),
+        google_exceptions.DeadlineExceeded | google_exceptions.ServiceUnavailable,
     ):
         return NetworkError(str(exception))
     elif isinstance(exception, google_exceptions.GoogleAPIError):
@@ -112,11 +117,11 @@ def map_google_exception(exception: Exception) -> Exception:
         return exception
 
 
-def circuit_breaker_check(func):
+def circuit_breaker_check(func: Callable[..., Any]) -> Any:
     """Decorator to check circuit breaker before function execution."""
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not gemini_circuit_breaker.can_proceed():
             raise CircuitBreakerOpenError()
 
@@ -137,10 +142,10 @@ def retry_on_failure(
     base_delay: float = 1.0,
     max_delay: float = 60.0,
     exponential_base: int = 2,
-):
+) -> Any:
     """Decorator for retrying failed operations with exponential backoff."""
 
-    def decorator(func):
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         @retry(
             stop=stop_after_attempt(max_attempts),
             wait=wait_exponential(
@@ -156,12 +161,16 @@ def retry_on_failure(
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(*args, **kwargs)
             except RetryError as e:
                 # If all retries failed, raise the last exception
-                raise e.last_attempt.exception()
+                if e.last_attempt and e.last_attempt.exception():
+                    exc = e.last_attempt.exception()
+                    if exc:
+                        raise exc
+                raise
 
         return wrapper
 
@@ -207,13 +216,13 @@ def get_user_friendly_error_message(exception: Exception) -> str:
         return "Service temporarily unavailable due to repeated failures. Please try again later."
 
     elif isinstance(exception, ModelError):
-        return f"Model error: {str(exception)}"
+        return f"Model error: {exception!s}"
 
     else:
-        return f"An unexpected error occurred: {str(exception)}"
+        return f"An unexpected error occurred: {exception!s}"
 
 
-def create_structured_error_response(exception: Exception) -> Dict[str, Any]:
+def create_structured_error_response(exception: Exception) -> dict[str, Any]:
     """Create a structured error response for MCP clients."""
     return {
         "error": True,
