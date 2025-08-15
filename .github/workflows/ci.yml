@@ -129,7 +129,7 @@ jobs:
           path: ./
           base: main
           head: HEAD
-          extra_args: --only-verified
+          extra_args: --only-verified --exclude-paths=.trufflehogignore --exclude-globs="**/*.example,**/*.template,**/docs/**"
 
   test:
     name: 🧪 Matrix Testing
