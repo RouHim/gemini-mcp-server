@@ -49,7 +49,7 @@ class QueueStatusRequest(BaseModel):
     pass
 
 
-@server.list_tools()
+@server.list_tools()  # type: ignore[misc]
 async def handle_list_tools() -> list[Tool]:
     """List available tools."""
     return [
@@ -66,7 +66,7 @@ async def handle_list_tools() -> list[Tool]:
     ]
 
 
-@server.call_tool()
+@server.call_tool()  # type: ignore[misc]
 async def handle_call_tool(
     name: str, arguments: dict[str, Any] | None
 ) -> list[TextContent | ImageContent | EmbeddedResource]:
@@ -138,21 +138,15 @@ async def handle_generate_image(
 
 async def _generate_image(request: ImageGenerationParameters) -> dict[Any, Any]:
     """Generate image."""
-    try:
-        # Ensure client is initialized
-        assert gemini_client is not None, "Gemini client not initialized"
+    # Ensure client is initialized
+    assert gemini_client is not None, "Gemini client not initialized"
 
-        # Generate the image
-        result = await gemini_client.generate_image(
-            prompt=request.get_enhanced_prompt(),
-            **request.to_generation_config(),
-            safety_level=request.safety_level.value,
-        )
-
-        return result
-
-    except Exception:
-        raise
+    # Generate the image
+    return await gemini_client.generate_image(  # type: ignore[unreachable]
+        prompt=request.get_enhanced_prompt(),
+        **request.to_generation_config(),
+        safety_level=request.safety_level.value,
+    )
 
 
 async def handle_get_queue_status() -> list[TextContent]:
@@ -209,8 +203,8 @@ async def main() -> None:
                     server_name="gemini-mcp-server",
                     server_version="0.2.0",
                     capabilities=server.get_capabilities(
-                        notification_options=None,
-                        experimental_capabilities=None,
+                        notification_options=None,  # type: ignore[arg-type]
+                        experimental_capabilities=None,  # type: ignore[arg-type]
                     ),
                 ),
             )

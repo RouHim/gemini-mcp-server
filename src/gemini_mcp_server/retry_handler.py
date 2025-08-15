@@ -121,7 +121,7 @@ def circuit_breaker_check(func: Callable[..., Any]) -> Any:
     """Decorator to check circuit breaker before function execution."""
 
     @wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not gemini_circuit_breaker.can_proceed():
             raise CircuitBreakerOpenError()
 
@@ -161,14 +161,16 @@ def retry_on_failure(
             before_sleep=before_sleep_log(logger, logging.WARNING),
         )
         @wraps(func)
-        async def wrapper(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             try:
                 return await func(*args, **kwargs)
             except RetryError as e:
                 # If all retries failed, raise the last exception
                 if e.last_attempt and e.last_attempt.exception():
-                    raise e.last_attempt.exception()  # type: ignore[misc]
-                raise  # type: ignore[misc]
+                    exc = e.last_attempt.exception()
+                    if exc:
+                        raise exc
+                raise
 
         return wrapper
 
