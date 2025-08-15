@@ -94,7 +94,10 @@ def map_google_exception(exception: Exception) -> Exception:
         return QuotaExceededError(str(exception))
     elif isinstance(exception, google_exceptions.TooManyRequests):
         return RateLimitError(str(exception))
-    elif isinstance(exception, google_exceptions.Unauthenticated | google_exceptions.PermissionDenied):
+    elif isinstance(
+        exception,
+        google_exceptions.Unauthenticated | google_exceptions.PermissionDenied,
+    ):
         return AuthenticationError(str(exception))
     elif isinstance(exception, google_exceptions.InvalidArgument):
         if "content policy" in str(exception).lower():
