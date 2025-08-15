@@ -2,7 +2,7 @@ name: 🚀 Complete CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, feature/modern-ci-cd-pipeline ]
   pull_request:
     branches: [ main, develop ]
   schedule:
