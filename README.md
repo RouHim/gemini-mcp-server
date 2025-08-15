@@ -184,12 +184,6 @@ HISTORY_DB_PATH=./queue_persistence.db
 For more control, you can configure additional settings:
 
 ```bash
-# Optional storage
-IMAGE_STORAGE_PATH=./images
-MAX_STORAGE_SIZE_MB=1000
-MAX_IMAGE_COUNT=100
-CLEANUP_AFTER_DAYS=30
-
 # Optional rate limiting
 MAX_CONCURRENT_REQUESTS=3
 ```

@@ -44,23 +44,13 @@ class TestQueueManager:
         return client
 
     @pytest.fixture
-    def mock_history_manager(self):
-        """Create mock history manager."""
-        manager = AsyncMock()
-        manager.record_generation = AsyncMock(return_value="history-123")
-        manager.update_generation_result = AsyncMock()
-        manager.mark_generation_failed = AsyncMock()
-        return manager
-
-    @pytest.fixture
     def queue_manager(
-        self, mock_rate_limiter, mock_gemini_client, mock_history_manager
+        self, mock_rate_limiter, mock_gemini_client
     ):
         """Create queue manager with mocked dependencies."""
         return QueueManager(
             rate_limiter=mock_rate_limiter,
             gemini_client=mock_gemini_client,
-            history_manager=mock_history_manager,
             max_queue_size=10,
             max_retries=3,
         )
@@ -147,7 +137,7 @@ class TestQueueManager:
 
     @pytest.mark.asyncio
     async def test_process_single_request_success(
-        self, queue_manager, sample_params, mock_gemini_client, mock_history_manager
+        self, queue_manager, sample_params, mock_gemini_client
     ):
         """Test processing a single request successfully."""
         request = GenerationRequest(
@@ -162,11 +152,10 @@ class TestQueueManager:
 
         assert request.status == QueueStatus.COMPLETED
         mock_gemini_client.generate_image.assert_called_once()
-        mock_history_manager.update_generation_result.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_process_single_request_failure(
-        self, queue_manager, sample_params, mock_gemini_client, mock_history_manager
+        self, queue_manager, sample_params, mock_gemini_client
     ):
         """Test processing a single request with failure."""
         mock_gemini_client.generate_image.side_effect = Exception("API Error")
@@ -183,7 +172,6 @@ class TestQueueManager:
 
         assert request.status == QueueStatus.FAILED
         assert request.retry_count == 0  # First failure
-        mock_history_manager.mark_generation_failed.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_retry_mechanism(

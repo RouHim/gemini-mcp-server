@@ -1,5 +1,9 @@
 # Agent Guidelines for Gemini MCP Server
 
+## General behaviour
+- If unsure about a decision, search online for best practices
+- If unsure about a library usage, use context7 to lookup library documentation
+
 ## Build/Test Commands
 ### Direct Commands
 - **Install deps**: `pip install -e .[dev]`
