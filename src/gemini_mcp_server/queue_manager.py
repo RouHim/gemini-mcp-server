@@ -115,7 +115,7 @@ class AsyncRequestQueue:
             conn.close()
             logger.info(f"Queue database initialized at {self.db_path}")
         except Exception as e:
-            logger.error(f"Failed to initialize queue database: {e}")
+            logger.exception(f"Failed to initialize queue database: {e}")
 
     def _save_request_to_db(self, request: QueuedRequest):
         """Save request to database."""
@@ -126,8 +126,8 @@ class AsyncRequestQueue:
             conn = sqlite3.connect(self.db_path)
             conn.execute(
                 """
-                INSERT OR REPLACE INTO queued_requests 
-                (id, function_name, args, kwargs, priority, status, created_at, 
+                INSERT OR REPLACE INTO queued_requests
+                (id, function_name, args, kwargs, priority, status, created_at,
                  started_at, completed_at, result, error, retry_count, max_retries)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -150,7 +150,7 @@ class AsyncRequestQueue:
             conn.commit()
             conn.close()
         except Exception as e:
-            logger.error(f"Failed to save request to database: {e}")
+            logger.exception(f"Failed to save request to database: {e}")
 
     def _load_pending_requests(self):
         """Load pending requests from database on startup."""
@@ -161,7 +161,7 @@ class AsyncRequestQueue:
             conn = sqlite3.connect(self.db_path)
             cursor = conn.execute(
                 """
-                SELECT * FROM queued_requests 
+                SELECT * FROM queued_requests
                 WHERE status IN ('pending', 'processing')
                 ORDER BY created_at
             """
@@ -190,7 +190,7 @@ class AsyncRequestQueue:
             conn.close()
             logger.info("Loaded pending requests from database")
         except Exception as e:
-            logger.error(f"Failed to load pending requests: {e}")
+            logger.exception(f"Failed to load pending requests: {e}")
 
     def _get_priority_value(self, priority: RequestPriority) -> int:
         """Convert priority enum to numeric value for queue ordering."""
@@ -309,7 +309,7 @@ class AsyncRequestQueue:
                         max_retries=row[12],
                     )
             except Exception as e:
-                logger.error(f"Failed to get request status from database: {e}")
+                logger.exception(f"Failed to get request status from database: {e}")
 
         return None
 
@@ -330,7 +330,7 @@ class AsyncRequestQueue:
                 conn.commit()
                 conn.close()
             except Exception as e:
-                logger.error(f"Failed to cancel request in database: {e}")
+                logger.exception(f"Failed to cancel request in database: {e}")
 
         logger.info(f"Cancelled request {request_id}")
         return True
@@ -388,7 +388,7 @@ class AsyncRequestQueue:
                     priority_value = self._get_priority_value(request.priority)
                     await self._queue.put((priority_value, time.time(), request))
                 else:
-                    logger.error(
+                    logger.exception(
                         f"Request {request.id} failed permanently after {request.retry_count} attempts: {e}"
                     )
                     request.status = RequestStatus.FAILED
@@ -437,7 +437,7 @@ class AsyncRequestQueue:
                 await self._process_request(request, function)
 
             except Exception as e:
-                logger.error(f"Error in queue worker: {e}")
+                logger.exception(f"Error in queue worker: {e}")
 
     async def start(self):
         """Start the queue worker."""

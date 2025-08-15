@@ -1,7 +1,7 @@
 """Image generation parameter definitions and validation."""
 
 from enum import Enum
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -116,11 +116,14 @@ class ImageGenerationParameters(BaseModel):
             AspectRatio.PORTRAIT_3_4: "portrait format",
         }
 
-        enhanced_prompt = f"Generate a {style_prompts[self.style]} in {aspect_ratio_prompts[self.aspect_ratio]}: {self.prompt}"
+        enhanced_prompt = (
+            f"Generate a {style_prompts[self.style]} in "
+            f"{aspect_ratio_prompts[self.aspect_ratio]}: {self.prompt}"
+        )
         return enhanced_prompt
 
     class Config:
-        json_schema_extra = {
+        json_schema_extra: ClassVar[dict[str, Any]] = {
             "example": {
                 "prompt": "A beautiful sunset over mountains",
                 "aspect_ratio": "16:9",

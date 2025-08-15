@@ -47,7 +47,7 @@ class TestGeminiImageClient:
             # Mock the model to raise an exception, forcing placeholder
             mock_model.generate_content = AsyncMock(side_effect=Exception("API Error"))
 
-            params = ImageGenerationParameters(prompt="test prompt")
+            ImageGenerationParameters(prompt="test prompt")
             result = await client.generate_image("test prompt")
 
             assert result["prompt"] == "test prompt"
@@ -99,7 +99,7 @@ class TestGeminiImageClient:
             client = GeminiImageClient("fake-api-key")
             await client.initialize()
 
-            params = ImageGenerationParameters(prompt="test prompt")
+            ImageGenerationParameters(prompt="test prompt")
             result = await client.generate_image("test prompt")
 
             assert result["prompt"] == "test prompt"

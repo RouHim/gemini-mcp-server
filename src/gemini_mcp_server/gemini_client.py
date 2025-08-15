@@ -38,8 +38,8 @@ class GeminiImageClient:
             logger.info("Gemini client initialized successfully")
         except Exception as e:
             mapped_exception = map_google_exception(e)
-            logger.error(f"Failed to initialize Gemini client: {mapped_exception}")
-            raise mapped_exception
+            logger.exception("Failed to initialize Gemini client: %s", mapped_exception)
+            raise mapped_exception from e
 
     @circuit_breaker_check
     @retry_on_failure(max_attempts=3, base_delay=1.0, max_delay=60.0)
@@ -120,7 +120,7 @@ class GeminiImageClient:
 
         except Exception as e:
             mapped_exception = map_google_exception(e)
-            logger.error(f"Error generating image: {mapped_exception}")
+            logger.exception("Error generating image: %s", mapped_exception)
             # In case of any error, fall back to placeholder
             response = await self._generate_image_placeholder(prompt)
             return {
@@ -132,7 +132,7 @@ class GeminiImageClient:
                 "error": str(mapped_exception),
             }
 
-    async def _generate_image_placeholder(self, prompt: str) -> dict[str, Any]:
+    async def _generate_image_placeholder(self, prompt: str) -> dict[str, Any]:  # noqa: ARG002
         """
         Placeholder implementation for image generation.
 
@@ -154,8 +154,8 @@ class GeminiImageClient:
 
             return {"data": image_data, "mime_type": "image/png"}
 
-        except Exception as e:
-            logger.error(f"Error creating placeholder image: {e}")
+        except Exception:
+            logger.exception("Error creating placeholder image")
             raise
 
     def _get_safety_settings(
@@ -193,5 +193,5 @@ class GeminiImageClient:
 
         except Exception as e:
             mapped_exception = map_google_exception(e)
-            logger.error(f"API key validation failed: {mapped_exception}")
+            logger.exception("API key validation failed: %s", mapped_exception)
             return False

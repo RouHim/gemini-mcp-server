@@ -1,4 +1,4 @@
-"""Gemini MCP Server - MCP server for Gemini image generation optimized for free tier usage."""
+"""Gemini MCP Server - MCP server for Gemini image generation optimized for free."""
 
 __version__ = "0.1.0"
 

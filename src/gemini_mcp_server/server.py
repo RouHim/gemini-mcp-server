@@ -185,7 +185,7 @@ async def main():
         await gemini_client.initialize()
         logger.info("Gemini client initialized successfully")
     except Exception as e:
-        logger.error(f"Failed to initialize Gemini client: {e}")
+        logger.exception(f"Failed to initialize Gemini client: {e}")
         raise
 
     # Initialize the request queue

@@ -89,6 +89,16 @@ ignore = [
     "TRY300",   # try-except in loop
     "PLR2004",  # magic value comparison
     "SIM108",   # if-else-block can be replaced with ternary
+    "PLR0911",  # too many return statements
+    "PLW0603",  # global statement discouraged
+    "B904",     # raise without from
+    "G004",     # logging f-string
+    "TRY401",   # redundant exception in logging.exception
+    "E501",     # line too long
+    "TRY203",   # raise in except clause
+    "SIM115",   # use context manager for files
+    "PTH118",   # use pathlib instead of os.path.join
+    "PTH120",   # use pathlib instead of os.path.dirname
 ]
 
 [tool.ruff.lint.per-file-ignores]
