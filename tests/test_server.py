@@ -63,16 +63,18 @@ class TestMCPServer:
             mock_queue.enqueue = AsyncMock(return_value="request-123")
             mock_queue._worker_task = None
             mock_queue.start = AsyncMock()
-            
+
             # Mock the completed request
             mock_completed_request = MagicMock()
             mock_completed_request.status.value = "completed"
             mock_completed_request.result = {
                 "data": b"fake_image_data",
-                "mime_type": "image/png"
+                "mime_type": "image/png",
             }
-            mock_queue.wait_for_completion = AsyncMock(return_value=mock_completed_request)
-            
+            mock_queue.wait_for_completion = AsyncMock(
+                return_value=mock_completed_request
+            )
+
             mock_get_queue.return_value = mock_queue
 
             result = await handle_call_tool(
@@ -92,14 +94,16 @@ class TestMCPServer:
         """Test get_queue_status tool."""
         with patch("gemini_mcp_server.server.get_request_queue") as mock_get_queue:
             mock_queue = AsyncMock()
-            mock_queue.get_queue_stats = AsyncMock(return_value={
-                "queue_size": 5,
-                "processing_count": 1,
-                "max_concurrent": 3,
-                "requests_last_minute": 8,
-                "rate_limit_per_minute": 15,
-                "wait_time_seconds": 0.0,
-            })
+            mock_queue.get_queue_stats = AsyncMock(
+                return_value={
+                    "queue_size": 5,
+                    "processing_count": 1,
+                    "max_concurrent": 3,
+                    "requests_last_minute": 8,
+                    "rate_limit_per_minute": 15,
+                    "wait_time_seconds": 0.0,
+                }
+            )
             mock_get_queue.return_value = mock_queue
 
             result = await handle_call_tool("get_queue_status", {})

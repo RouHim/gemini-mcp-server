@@ -104,9 +104,7 @@ def mock_aiohttp_session():
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.read.return_value = b"fake_image_data"
-        mock_session.return_value.__aenter__.return_value.get.return_value.__aenter__.return_value = (
-            mock_response
-        )
+        mock_session.return_value.__aenter__.return_value.get.return_value.__aenter__.return_value = mock_response
         return mock_session
 
 
@@ -177,7 +175,6 @@ def mock_file_operations():
         patch("os.path.exists") as mock_exists,
         patch("os.unlink") as mock_unlink,
     ):
-
         mock_exists.return_value = True
         return {
             "open": mock_open,

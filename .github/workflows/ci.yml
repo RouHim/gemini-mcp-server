@@ -1,12 +1,10 @@
-name: 🚀 Ultra-Minimal CI/CD Pipeline
-
-# Force trigger for GitHub Actions processing
+name: CI/CD Pipeline
 on:
   push:
-    branches: [ main, develop, feature/modern-ci-cd-pipeline ]
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    types:
+      - opened
+  workflow_dispatch: # allow manual execution
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -135,18 +133,18 @@ jobs:
     name: 🧪 Matrix Testing
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
-    needs: [validate, validate-pyproject]
+    needs: [ validate, validate-pyproject ]
     
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
         exclude:
           # Reduced matrix for speed
           - os: windows-latest
             python-version: "3.10"
-          - os: windows-latest  
+          - os: windows-latest
             python-version: "3.11"
           - os: macos-latest
             python-version: "3.10"
@@ -186,7 +184,7 @@ jobs:
     name: 📦 Package Building + Verification
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [test, dependency-scan, secrets-scan]
+    needs: [ test, dependency-scan, secrets-scan ]
     
     steps:
       - name: 📥 Checkout code

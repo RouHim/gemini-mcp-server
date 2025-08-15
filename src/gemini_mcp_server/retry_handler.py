@@ -83,7 +83,9 @@ class CircuitBreaker:
 
 # Global circuit breaker for Gemini API calls
 gemini_circuit_breaker = CircuitBreaker(
-    failure_threshold=3, timeout=300.0, expected_exception=Exception  # 5 minutes
+    failure_threshold=3,
+    timeout=300.0,
+    expected_exception=Exception,  # 5 minutes
 )
 
 

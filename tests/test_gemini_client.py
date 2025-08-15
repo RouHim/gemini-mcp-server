@@ -85,10 +85,10 @@ class TestGeminiImageClient:
             mock_inline_data = MagicMock()
             mock_inline_data.data = b"fake_image_data"
             mock_inline_data.mime_type = "image/png"
-            
+
             mock_part = MagicMock()
             mock_part.inline_data = mock_inline_data
-            
+
             mock_response = MagicMock()
             mock_response.parts = [mock_part]
 
@@ -107,5 +107,3 @@ class TestGeminiImageClient:
             assert "data" in result
             assert result["mime_type"] == "image/png"
             assert "error" not in result
-
-

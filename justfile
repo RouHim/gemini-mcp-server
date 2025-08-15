@@ -18,42 +18,42 @@ dev-setup:
 
 # Install package and dependencies
 install:
-    pip install -e .[dev]
+    uv sync --dev
 
 # Code formatting
 format:
-    black src/ tests/ scripts/
+    uv run ruff format src/ tests/ scripts/
 
 # Code linting
 lint:
-    ruff check src/ tests/ scripts/
+    uv run ruff check src/ tests/ scripts/
 
 # Type checking
 typecheck:
-    mypy src/
+    uv run mypy src/
 
 # Run all quality checks
 quality: format lint typecheck
 
 # Run tests
 test:
-    pytest tests/ -v
+    uv run pytest tests/ -v
 
 # Run specific test
 test-one TEST:
-    pytest tests/{{TEST}} -v
+    uv run pytest tests/{{TEST}} -v
 
 # Run unit tests only
 test-unit:
-    pytest tests/ -v -m "unit"
+    uv run pytest tests/ -v -m "unit"
 
 # Run integration tests only
 test-integration:
-    pytest tests/ -v -m "integration"
+    uv run pytest tests/ -v -m "integration"
 
 # Run tests with coverage
 test-coverage:
-    pytest tests/ -v --cov=src --cov-report=html --cov-report=term
+    uv run pytest tests/ -v --cov=src --cov-report=html --cov-report=term
 
 # Clean build artifacts
 clean:
@@ -66,37 +66,34 @@ clean:
 
 # Build package
 build: clean
-    python -m build
+    uv build --wheel --sdist
 
 # Run all checks (CI pipeline)
 ci: lint typecheck test-coverage
 
-# Complete quality check
-all: quality test
-
 # Validate project setup
 validate:
-    python scripts/validate.py
+    uv run python scripts/validate.py
 
 # Start development server
 serve:
-    python -m gemini_mcp_server.server
+    uv run python -m gemini_mcp_server.server
 
 # Start server with debug
 debug:
-    PYTHONPATH=src python -m pdb -m gemini_mcp_server.server
+    uv run python -m pdb -m gemini_mcp_server.server
 
 # Test installation verification
 test-install:
-    python test_installation.py
+    uv run python test_installation.py
 
 # Configure MCP for Claude Desktop
 configure-claude:
-    python configure_mcp.py claude
+    uv run python configure_mcp.py claude
 
 # Configure MCP for opencode
 configure-opencode:
-    python configure_mcp.py opencode
+    uv run python configure_mcp.py opencode
 
 # Show project status
 status:
@@ -211,11 +208,11 @@ deps-check:
 
 # Lint fix (auto-fix what's possible)
 lint-fix:
-    ruff check src/ tests/ scripts/ --fix
+    uv run ruff check src/ tests/ scripts/ --fix
 
 # Format check (don't modify, just check)
 format-check:
-    black src/ tests/ scripts/ --check
+    uv run ruff format src/ tests/ scripts/ --check
 
 # Full reset (clean + reinstall)
 reset: clean
