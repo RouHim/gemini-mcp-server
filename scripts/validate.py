@@ -60,7 +60,7 @@ def main():
         ("src/gemini_mcp_server/server.py", "MCP server"),
         ("tests/conftest.py", "Test configuration"),
         (".github/workflows/ci.yml", "CI pipeline"),
-        (".env.example", "Environment template"),
+        ("config/.env.example", "Environment template"),
     ]
 
     print("📁 Checking file structure...")
