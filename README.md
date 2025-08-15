@@ -176,7 +176,6 @@ GOOGLE_API_KEY=your_api_key_here
 LOG_LEVEL=INFO
 MAX_REQUESTS_PER_MINUTE=15
 IMAGE_OUTPUT_DIR=./generated_images
-HISTORY_DB_PATH=./queue_persistence.db
 ```
 
 ### Advanced Configuration
